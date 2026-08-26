@@ -1,0 +1,245 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * activoo design system — soft lavender base with playful lime accents
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Surfaces */
+  --background: oklch(0.985 0.005 310);          /* near-white with lavender tint */
+  --foreground: oklch(0.18 0.04 285);             /* deep ink */
+  --surface: oklch(1 0 0);                        /* cards */
+  --surface-soft: oklch(0.965 0.025 310);         /* soft lavender wash */
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.04 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.04 285);
+
+  /* Primary = lavender */
+  --primary: oklch(0.78 0.13 305);
+  --primary-foreground: oklch(0.18 0.04 285);
+  --primary-strong: oklch(0.62 0.18 300);
+
+  /* Accent = lime green from logo eye */
+  --accent: oklch(0.85 0.22 142);
+  --accent-foreground: oklch(0.18 0.04 285);
+  --accent-strong: oklch(0.72 0.22 142);
+
+  /* Secondary surface */
+  --secondary: oklch(0.96 0.015 310);
+  --secondary-foreground: oklch(0.25 0.04 285);
+
+  --muted: oklch(0.96 0.01 310);
+  --muted-foreground: oklch(0.5 0.025 285);
+
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --success: oklch(0.72 0.18 150);
+  --success-foreground: oklch(0.18 0.04 285);
+  --warning: oklch(0.83 0.16 85);
+  --warning-foreground: oklch(0.18 0.04 285);
+
+  --border: oklch(0.92 0.015 310);
+  --input: oklch(0.94 0.012 310);
+  --ring: oklch(0.78 0.13 305);
+
+  --chart-1: oklch(0.78 0.13 305);
+  --chart-2: oklch(0.85 0.22 142);
+  --chart-3: oklch(0.7 0.15 250);
+  --chart-4: oklch(0.83 0.16 85);
+  --chart-5: oklch(0.62 0.22 25);
+
+  --sidebar: oklch(0.985 0.005 310);
+  --sidebar-foreground: oklch(0.18 0.04 285);
+  --sidebar-primary: oklch(0.78 0.13 305);
+  --sidebar-primary-foreground: oklch(0.18 0.04 285);
+  --sidebar-accent: oklch(0.96 0.015 310);
+  --sidebar-accent-foreground: oklch(0.18 0.04 285);
+  --sidebar-border: oklch(0.92 0.015 310);
+  --sidebar-ring: oklch(0.78 0.13 305);
+
+  /* Gradients & shadows */
+  --gradient-hero: linear-gradient(135deg, oklch(0.88 0.1 305) 0%, oklch(0.92 0.14 142) 100%);
+  --gradient-primary: linear-gradient(135deg, oklch(0.78 0.13 305), oklch(0.7 0.16 295));
+  --gradient-accent: linear-gradient(135deg, oklch(0.85 0.22 142), oklch(0.78 0.2 155));
+  --gradient-card: linear-gradient(180deg, oklch(1 0 0) 0%, oklch(0.98 0.01 310) 100%);
+
+  --shadow-soft: 0 1px 2px oklch(0.18 0.04 285 / 0.04), 0 4px 16px oklch(0.18 0.04 285 / 0.06);
+  --shadow-card: 0 2px 4px oklch(0.18 0.04 285 / 0.04), 0 12px 32px oklch(0.5 0.1 305 / 0.08);
+  --shadow-elevated: 0 8px 24px oklch(0.18 0.04 285 / 0.08), 0 24px 60px oklch(0.5 0.1 305 / 0.14);
+  --shadow-pop: 0 10px 28px oklch(0.62 0.18 300 / 0.28);
+}
+
+.dark {
+  --background: oklch(0.16 0.03 285);
+  --foreground: oklch(0.97 0.01 310);
+  --surface: oklch(0.22 0.04 285);
+  --surface-soft: oklch(0.25 0.05 290);
+  --card: oklch(0.22 0.04 285);
+  --card-foreground: oklch(0.97 0.01 310);
+  --popover: oklch(0.22 0.04 285);
+  --popover-foreground: oklch(0.97 0.01 310);
+  --primary: oklch(0.78 0.13 305);
+  --primary-foreground: oklch(0.18 0.04 285);
+  --secondary: oklch(0.28 0.04 285);
+  --secondary-foreground: oklch(0.97 0.01 310);
+  --muted: oklch(0.28 0.04 285);
+  --muted-foreground: oklch(0.7 0.02 285);
+  --accent: oklch(0.78 0.2 142);
+  --accent-foreground: oklch(0.18 0.04 285);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.78 0.13 305);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    min-height: 100vh;
+  }
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-hero { background-image: var(--gradient-hero); }
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+  .bg-gradient-accent { background-image: var(--gradient-accent); }
+  .bg-gradient-card { background-image: var(--gradient-card); }
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  .shadow-pop { box-shadow: var(--shadow-pop); }
+
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .animate-fade-up {
+    animation: fadeUp 0.5s ease-out both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Animated logo eyes */
+.activoo-logo .activoo-pupil {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: activoo-look 7s ease-in-out infinite;
+  will-change: transform;
+}
+.activoo-logo .activoo-pupil-2 {
+  animation-duration: 8.5s;
+  animation-delay: -2s;
+}
+.activoo-logo .activoo-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: activoo-blink 5.5s ease-in-out infinite;
+  will-change: transform;
+}
+.activoo-logo .activoo-eye-2 {
+  animation-duration: 6.7s;
+  animation-delay: -1.3s;
+}
+@keyframes activoo-look {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-12%, -8%); }
+  30% { transform: translate(10%, -6%); }
+  45% { transform: translate(14%, 8%); }
+  60% { transform: translate(-10%, 10%); }
+  75% { transform: translate(-6%, -10%); }
+  90% { transform: translate(8%, 4%); }
+}
+@keyframes activoo-blink {
+  0%, 92%, 96.5%, 100% { transform: scaleY(1); }
+  94%, 95% { transform: scaleY(0.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activoo-logo .activoo-pupil,
+  .activoo-logo .activoo-eye { animation: none; }
+}
