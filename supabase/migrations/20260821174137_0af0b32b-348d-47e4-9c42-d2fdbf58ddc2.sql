@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.guard_class_promo_flags() FROM PUBLIC, anon, authenticated;

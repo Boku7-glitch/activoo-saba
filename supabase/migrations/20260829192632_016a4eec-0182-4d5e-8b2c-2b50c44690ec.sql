@@ -1,0 +1,2 @@
+ALTER TABLE public.districts ADD COLUMN IF NOT EXISTS parent_id uuid REFERENCES public.districts(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS districts_parent_id_idx ON public.districts(parent_id);
