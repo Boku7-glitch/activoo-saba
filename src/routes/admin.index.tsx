@@ -21,8 +21,8 @@ function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from("schools").select("*", { count: "exact", head: true }),
-      supabase.from("classes").select("*", { count: "exact", head: true }),
+      supabase.from("schools").select("*", { count: "exact", head: true }).is("deleted_at", null),
+      supabase.from("classes").select("*", { count: "exact", head: true }).is("deleted_at", null),
       supabase.from("leads").select("*", { count: "exact", head: true }),
       supabase.from("leads").select("*", { count: "exact", head: true }).eq("status", "new"),
       supabase.from("profiles").select("*", { count: "exact", head: true }),

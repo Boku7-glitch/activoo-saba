@@ -4,7 +4,7 @@ import { Logo } from "@/components/Logo";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ViewTabs } from "@/components/ViewTabs";
 import { useAuth } from "@/lib/auth-context";
-import { useT } from "@/lib/i18n";
+import { useT, useNavItems, useLocalized } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -87,9 +87,11 @@ export function AppShell({ children, hideTabBar, hideHeader, hideViewTabs }: Pro
               <Search className="h-5 w-5" />
             </Link>
           </div>
-          <nav className="flex items-center">
-            <ViewTabs />
-          </nav>
+          {!hideViewTabs && (
+            <nav className="flex items-center">
+              <ViewTabs />
+            </nav>
+          )}
           <div className="flex items-center gap-2">
             <LanguageSwitcher variant="pill" />
 
@@ -155,22 +157,68 @@ export function AppShell({ children, hideTabBar, hideHeader, hideViewTabs }: Pro
       )}
 
       {/* Desktop footer */}
-      <footer className="hidden border-t border-border/60 bg-surface-soft md:block">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-8 py-8 md:flex-row md:items-center">
-          <div className="flex items-center gap-3">
-            <Logo height={20} />
-            <span className="text-xs text-muted-foreground">© {new Date().getFullYear()} activoo. All rights reserved.</span>
-          </div>
-          <nav className="flex items-center gap-5 text-xs text-muted-foreground">
-            <Link to="/" className="hover:text-foreground">{t("common.home")}</Link>
-            <Link to="/search" className="hover:text-foreground">{t("common.search")}</Link>
-            <Link to="/match" className="hover:text-foreground">{t("common.smartMatch")}</Link>
-            <Link to="/school/onboarding" className="hover:text-foreground">{t("common.forSchools")}</Link>
-          </nav>
-        </div>
-      </footer>
+      <DesktopFooter />
+      {/* Mobile footer */}
+      <MobileFooter />
     </div>
   );
+}
+
+function DesktopFooter() {
+  const footerItems = useNavItems("footer");
+  const t = useT();
+  return (
+    <footer className="hidden border-t border-border/60 bg-surface-soft md:block">
+      <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-8 py-8 md:flex-row md:items-center">
+        <div className="flex items-center gap-3">
+          <Logo height={20} />
+          <span className="text-xs text-muted-foreground">© {new Date().getFullYear()} activoo. All rights reserved.</span>
+        </div>
+        <nav className="flex flex-wrap items-center gap-5 text-xs text-muted-foreground">
+          {footerItems.length === 0 ? (
+            <>
+              <Link to="/" className="hover:text-foreground">{t("common.home")}</Link>
+              <Link to="/search" className="hover:text-foreground">{t("common.search")}</Link>
+              <Link to="/match" className="hover:text-foreground">{t("common.smartMatch")}</Link>
+              <Link to="/school/onboarding" className="hover:text-foreground">{t("common.forSchools")}</Link>
+            </>
+          ) : (
+            footerItems.map((item) => <FooterLink key={item.id} labelKa={item.label_ka} labelEn={item.label_en} href={item.href} />)
+          )}
+          <Link to="/terms" className="hover:text-foreground">{t("common.terms")}</Link>
+          <Link to="/privacy" className="hover:text-foreground">{t("common.privacy")}</Link>
+          <Link to="/admin" className="hover:text-foreground">Admin</Link>
+        </nav>
+      </div>
+    </footer>
+  );
+}
+
+function MobileFooter() {
+  const t = useT();
+  return (
+    <footer className="border-t border-border/60 bg-surface-soft px-4 py-6 pb-28 md:hidden">
+      <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <Link to="/" className="hover:text-foreground">{t("common.home")}</Link>
+        <Link to="/search" className="hover:text-foreground">{t("common.search")}</Link>
+        <Link to="/terms" className="hover:text-foreground">{t("common.terms")}</Link>
+        <Link to="/privacy" className="hover:text-foreground">{t("common.privacy")}</Link>
+        <Link to="/admin" className="hover:text-foreground">Admin</Link>
+      </nav>
+      <p className="mt-4 text-center text-[10px] text-muted-foreground/70">
+        © {new Date().getFullYear()} activoo. All rights reserved.
+      </p>
+    </footer>
+  );
+}
+
+function FooterLink({ labelKa, labelEn, href }: { labelKa: string; labelEn: string | null; href: string }) {
+  const label = useLocalized(labelKa, labelEn);
+  const isExternal = /^https?:\/\//.test(href);
+  if (isExternal) {
+    return <a href={href} target="_blank" rel="noreferrer" className="hover:text-foreground">{label}</a>;
+  }
+  return <a href={href} className="hover:text-foreground">{label}</a>;
 }
 
 function DesktopLink({ to, label, active }: { to: string; label: string; active: boolean }) {
@@ -188,11 +236,11 @@ function DesktopLink({ to, label, active }: { to: string; label: string; active:
 }
 
 function TabItem({
-                   to,
-                   icon,
-                   label,
-                   active,
-                 }: {
+  to,
+  icon,
+  label,
+  active,
+}: {
   to: string;
   icon: ReactNode;
   label: string;

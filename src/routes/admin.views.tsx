@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TranslateInline } from "@/components/AutoTranslate";
+import { IconPicker } from "@/components/IconPicker";
+
 
 export const Route = createFileRoute("/admin/views")({
   component: AdminViews,
@@ -13,7 +16,9 @@ interface ViewRow {
   id: string;
   slug: string;
   name: string;
+  name_en: string | null;
   icon: string;
+  icon_url: string | null;
   accent_hex: string;
   accent_secondary_hex: string;
   sort_order: number;
@@ -25,7 +30,9 @@ interface CategoryRow {
   view_id: string;
   slug: string;
   name: string;
+  name_en: string | null;
   icon: string;
+  icon_url: string | null;
   sort_order: number;
 }
 
@@ -34,8 +41,12 @@ interface SubRow {
   category_id: string;
   slug: string;
   name: string;
+  name_en: string | null;
+  icon: string | null;
+  icon_url: string | null;
   sort_order: number;
 }
+
 
 interface FilterRow {
   id: string;
@@ -115,9 +126,10 @@ function ViewsTab({ views, onChange }: { views: ViewRow[]; onChange: () => void 
 
   const save = async (v: ViewRow) => {
     const { error } = await supabase.from("views").update({
-      name: v.name, icon: v.icon, accent_hex: v.accent_hex, accent_secondary_hex: v.accent_secondary_hex,
+      name: v.name, name_en: v.name_en, icon: v.icon, icon_url: v.icon_url, accent_hex: v.accent_hex, accent_secondary_hex: v.accent_secondary_hex,
       sort_order: v.sort_order, is_active: v.is_active, slug: v.slug,
     }).eq("id", v.id);
+
     if (error) return toast.error(error.message);
     toast.success("Saved");
     onChange();
@@ -146,9 +158,16 @@ function ViewsTab({ views, onChange }: { views: ViewRow[]; onChange: () => void 
       {Object.values(drafts).map((v) => (
         <div key={v.id} className="rounded-2xl border border-border bg-surface p-4 shadow-soft">
           <div className="grid gap-3 md:grid-cols-6">
-            <Field label="Name"><input value={v.name} onChange={(e) => update(v.id, { name: e.target.value })} className={inp} /></Field>
+            <Field label="Name (KA)"><input value={v.name} onChange={(e) => update(v.id, { name: e.target.value })} className={inp} /></Field>
+            <Field label="Name (EN)">
+              <div className="flex items-center gap-1">
+                <input value={v.name_en ?? ""} onChange={(e) => update(v.id, { name_en: e.target.value })} className={inp} />
+                <TranslateInline source={v.name} onResult={(t) => update(v.id, { name_en: t })} />
+              </div>
+            </Field>
+
             <Field label="Slug"><input value={v.slug} onChange={(e) => update(v.id, { slug: e.target.value })} className={inp} /></Field>
-            <Field label="Icon (lucide)"><input value={v.icon} onChange={(e) => update(v.id, { icon: e.target.value })} className={inp} placeholder="Sparkles" /></Field>
+            <Field label="Icon (lucide / emoji / upload)"><IconPicker icon={v.icon} iconUrl={v.icon_url} placeholder="Sparkles" onChange={(patch) => update(v.id, patch)} /></Field>
             <Field label="Accent">
               <div className="flex gap-1">
                 <input type="color" value={v.accent_hex} onChange={(e) => update(v.id, { accent_hex: e.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border border-border" />
@@ -202,7 +221,7 @@ function CategoriesTab({ views, cats, subs, onChange }: { views: ViewRow[]; cats
 
   const saveCat = async (c: CategoryRow) => {
     const { error } = await supabase.from("view_categories").update({
-      slug: c.slug, name: c.name, icon: c.icon, sort_order: c.sort_order,
+      slug: c.slug, name: c.name, name_en: c.name_en, icon: c.icon, icon_url: c.icon_url, sort_order: c.sort_order,
     }).eq("id", c.id);
     if (error) return toast.error(error.message);
     toast.success("Saved");
@@ -225,7 +244,7 @@ function CategoriesTab({ views, cats, subs, onChange }: { views: ViewRow[]; cats
 
   const saveSub = async (s: SubRow) => {
     const { error } = await supabase.from("view_subcategories").update({
-      slug: s.slug, name: s.name, sort_order: s.sort_order,
+      slug: s.slug, name: s.name, name_en: s.name_en, icon: s.icon, icon_url: s.icon_url, sort_order: s.sort_order,
     }).eq("id", s.id);
     if (error) return toast.error(error.message);
     toast.success("Saved");
@@ -257,8 +276,11 @@ function CategoriesTab({ views, cats, subs, onChange }: { views: ViewRow[]; cats
                 <button onClick={() => setOpen((o) => ({ ...o, [c.id]: !isOpen }))} className="text-muted-foreground">
                   {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </button>
-                <input defaultValue={c.icon} onBlur={(e) => saveCat({ ...c, icon: e.target.value })} className={`${inp} w-14 text-center`} />
-                <input defaultValue={c.name} onBlur={(e) => saveCat({ ...c, name: e.target.value })} className={`${inp} flex-1`} />
+                <IconPicker compact icon={c.icon} iconUrl={c.icon_url} onChange={(patch) => saveCat({ ...c, ...patch } as CategoryRow)} />
+                <input defaultValue={c.name} onBlur={(e) => saveCat({ ...c, name: e.target.value })} placeholder="Name (KA)" className={`${inp} flex-1`} />
+                <input key={`${c.id}-en-${c.name_en ?? ""}`} defaultValue={c.name_en ?? ""} onBlur={(e) => saveCat({ ...c, name_en: e.target.value })} placeholder="Name (EN)" className={`${inp} flex-1`} />
+                <TranslateInline source={c.name} onResult={(t) => saveCat({ ...c, name_en: t })} />
+
                 <input defaultValue={c.slug} onBlur={(e) => saveCat({ ...c, slug: e.target.value })} className={`${inp} w-32`} />
                 <input type="number" defaultValue={c.sort_order} onBlur={(e) => saveCat({ ...c, sort_order: Number(e.target.value) })} className={`${inp} w-16`} />
                 <button onClick={() => delCat(c.id)} className="rounded-xl bg-destructive/10 p-2 text-destructive hover:bg-destructive/20"><Trash2 className="h-4 w-4" /></button>
@@ -267,7 +289,11 @@ function CategoriesTab({ views, cats, subs, onChange }: { views: ViewRow[]; cats
                 <div className="space-y-2 border-t border-border bg-muted/20 p-3 pl-10">
                   {catSubs.map((s) => (
                     <div key={s.id} className="flex items-center gap-2">
-                      <input defaultValue={s.name} onBlur={(e) => saveSub({ ...s, name: e.target.value })} className={`${inp} flex-1`} />
+                      <IconPicker compact icon={s.icon} iconUrl={s.icon_url} onChange={(patch) => saveSub({ ...s, ...patch } as SubRow)} />
+                      <input defaultValue={s.name} onBlur={(e) => saveSub({ ...s, name: e.target.value })} placeholder="Name (KA)" className={`${inp} flex-1`} />
+                      <input key={`${s.id}-en-${s.name_en ?? ""}`} defaultValue={s.name_en ?? ""} onBlur={(e) => saveSub({ ...s, name_en: e.target.value })} placeholder="Name (EN)" className={`${inp} flex-1`} />
+                      <TranslateInline source={s.name} onResult={(t) => saveSub({ ...s, name_en: t })} />
+
                       <input defaultValue={s.slug} onBlur={(e) => saveSub({ ...s, slug: e.target.value })} className={`${inp} w-32`} />
                       <input type="number" defaultValue={s.sort_order} onBlur={(e) => saveSub({ ...s, sort_order: Number(e.target.value) })} className={`${inp} w-16`} />
                       <button onClick={() => delSub(s.id)} className="rounded-xl bg-destructive/10 p-1.5 text-destructive hover:bg-destructive/20"><Trash2 className="h-3.5 w-3.5" /></button>

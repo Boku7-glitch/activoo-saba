@@ -4,7 +4,6 @@ import soccerImg from "@/assets/class-soccer.jpg";
 import artImg from "@/assets/class-art.jpg";
 import languageImg from "@/assets/class-language.jpg";
 import chessImg from "@/assets/class-chess.jpg";
-import { supabase } from "@/integrations/supabase/client"; // Supabase-ის დაიმპორტება URL-ის დასაგენერირებლად
 
 export type CategoryKey = "creativity" | "it" | "sports" | "development" | "languages";
 
@@ -21,39 +20,31 @@ export const CATEGORIES: Record<
 
 export const CATEGORY_KEYS = Object.keys(CATEGORIES) as CategoryKey[];
 
+import { supabase } from "@/integrations/supabase/client";
+
 /**
  * Resolve image for a class. Prefers explicit image_url, falls back to a
  * curated category image so the UI is never empty.
  */
-export function classImage(category: CategoryKey, imageUrl?: string | null): string {
-  // 1. თუ image_url საერთოდ არ გვაქვს, პირდაპირ ვაბრუნებთ კატეგორიის სურათს
-  if (!imageUrl) {
-    return CATEGORIES[category]?.image || artImg; // უსაფრთხო fallback თუ category არასწორია
+export function classImage(category?: CategoryKey | string | null, fallbackImage?: string | null): string {
+  if (fallbackImage && /^(https?:|data:|\/)/.test(fallbackImage)) return fallbackImage;
+  if (fallbackImage) {
+    const lower = fallbackImage.toLowerCase();
+    if (lower.includes("dance")) return danceImg;
+    if (lower.includes("coding")) return codingImg;
+    if (lower.includes("soccer")) return soccerImg;
+    if (lower.includes("art")) return artImg;
+    if (lower.includes("language")) return languageImg;
+    if (lower.includes("chess")) return chessImg;
+    if (fallbackImage.includes("/") || fallbackImage.includes(".")) {
+      const { data } = supabase.storage.from("public-images").getPublicUrl(fallbackImage);
+      if (data?.publicUrl) return data.publicUrl;
+    }
   }
-
-  // 2. თუ სრული URL-ია (http/https), Data URI-ა, ან ლოკალური absolute path-ია
-  if (/^(https?:|data:|\/)/.test(imageUrl)) {
-    return imageUrl;
+  if (category && (category in CATEGORIES)) {
+    return CATEGORIES[category as CategoryKey].image;
   }
-
-  // 3. Seed data - ლოკალური ფაილების ამოცნობა სახელებით (case-insensitive)
-  const lowerUrl = imageUrl.toLowerCase();
-  if (lowerUrl.includes("dance")) return danceImg;
-  if (lowerUrl.includes("coding")) return codingImg;
-  if (lowerUrl.includes("soccer")) return soccerImg;
-  if (lowerUrl.includes("art")) return artImg;
-  if (lowerUrl.includes("language")) return languageImg;
-  if (lowerUrl.includes("chess")) return chessImg;
-
-  // 4. თუ Supabase-ის მხოლოდ path არის შენახული ბაზაში (მაგ: "uploads/file.jpg")
-  // ავტომატურად ვაგენერირებთ სრულ Public URL-ს public-images ბაქეტიდან
-  if (imageUrl.includes("/") || imageUrl.includes(".")) {
-    const { data } = supabase.storage.from("public-images").getPublicUrl(imageUrl);
-    if (data?.publicUrl) return data.publicUrl;
-  }
-
-  // 5. საბოლოო სათადარიგო სურათი კატეგორიის მიხედვით
-  return CATEGORIES[category]?.image || artImg;
+  return artImg;
 }
 
 export const DISTRICTS = ["Vake", "Saburtalo", "Vera", "Didi Dighomi", "Old Tbilisi", "Isani"] as const;

@@ -17,34 +17,22 @@ export function ImageUploader({ value, onChange, folder = "uploads", label = "Im
   const upload = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) return toast.error("Max 5 MB");
     if (!file.type.startsWith("image/")) return toast.error("Image only");
-
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return toast.error("Please sign in to upload images");
     setUploading(true);
-
-    try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-      const { error } = await supabase.storage.from("public-images").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: file.type,
-      });
-
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-
-      const { data } = supabase.storage.from("public-images").getPublicUrl(path);
-      onChange(data.publicUrl);
-      toast.success("Uploaded successfully");
-    } catch (err: any) {
-      toast.error(err.message || "An unexpected error occurred during upload");
-    } finally {
-      // Finally გარანტიას გვაძლევს რომ ღილაკი არასდროს გაიჭედება Loading რეჟიმში
-      setUploading(false);
-    }
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${uid}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("public-images").upload(path, file, {
+      cacheControl: "3600", upsert: false, contentType: file.type,
+    });
+    setUploading(false);
+    if (error) return toast.error(error.message);
+    const { data } = supabase.storage.from("public-images").getPublicUrl(path);
+    onChange(data.publicUrl);
+    toast.success("Uploaded");
   };
+
 
   return (
     <label className="block">
@@ -95,13 +83,14 @@ interface GalleryProps {
   value: string[] | null;
   onChange: (urls: string[]) => void;
   folder?: string;
+  label?: string;
 }
 
-export function GalleryUploader({ value, onChange, folder = "gallery" }: GalleryProps) {
+export function GalleryUploader({ value, onChange, folder = "gallery", label = "Gallery" }: GalleryProps) {
   const list = value ?? [];
   return (
     <div>
-      <span className="mb-1 block text-xs font-semibold">Gallery</span>
+      <span className="mb-1 block text-xs font-semibold">{label}</span>
       <div className="flex flex-wrap gap-2">
         {list.map((url, i) => (
           <div key={i} className="relative h-20 w-20 overflow-hidden rounded-xl border border-border">

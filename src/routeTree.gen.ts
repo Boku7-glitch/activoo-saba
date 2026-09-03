@@ -9,32 +9,59 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as MatchRouteImport } from './routes/match'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as SchoolsSlugRouteImport } from './routes/schools.$slug'
 import { Route as SchoolOnboardingRouteImport } from './routes/school.onboarding'
 import { Route as SchoolDashboardRouteImport } from './routes/school.dashboard'
-import { Route as ProviderIdRouteImport } from './routes/provider.$id'
 import { Route as ProfileSavedRouteImport } from './routes/profile.saved'
+import { Route as ProfileNotificationsRouteImport } from './routes/profile.notifications'
 import { Route as ProfileHistoryRouteImport } from './routes/profile.history'
 import { Route as ClassIdRouteImport } from './routes/class.$id'
 import { Route as BookIdRouteImport } from './routes/book.$id'
+import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AdminViewsRouteImport } from './routes/admin.views'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSchoolsRouteImport } from './routes/admin.schools'
+import { Route as AdminNavRouteImport } from './routes/admin.nav'
+import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminDeletedRouteImport } from './routes/admin.deleted'
 import { Route as AdminClassesRouteImport } from './routes/admin.classes'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MatchRoute = MatchRouteImport.update({
@@ -67,6 +94,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const SchoolsSlugRoute = SchoolsSlugRouteImport.update({
+  id: '/schools/$slug',
+  path: '/schools/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SchoolOnboardingRoute = SchoolOnboardingRouteImport.update({
   id: '/school/onboarding',
   path: '/school/onboarding',
@@ -77,14 +109,14 @@ const SchoolDashboardRoute = SchoolDashboardRouteImport.update({
   path: '/school/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProviderIdRoute = ProviderIdRouteImport.update({
-  id: '/provider/$id',
-  path: '/provider/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProfileSavedRoute = ProfileSavedRouteImport.update({
   id: '/profile/saved',
   path: '/profile/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileNotificationsRoute = ProfileNotificationsRouteImport.update({
+  id: '/profile/notifications',
+  path: '/profile/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileHistoryRoute = ProfileHistoryRouteImport.update({
@@ -101,6 +133,11 @@ const BookIdRoute = BookIdRouteImport.update({
   id: '/book/$id',
   path: '/book/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthResetRoute = AuthResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AdminViewsRoute = AdminViewsRouteImport.update({
   id: '/views',
@@ -122,9 +159,24 @@ const AdminSchoolsRoute = AdminSchoolsRouteImport.update({
   path: '/schools',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminNavRoute = AdminNavRouteImport.update({
+  id: '/nav',
+  path: '/nav',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminModerationRoute = AdminModerationRouteImport.update({
+  id: '/moderation',
+  path: '/moderation',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLocationsRoute = AdminLocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminLeadsRoute = AdminLeadsRouteImport.update({
@@ -132,11 +184,34 @@ const AdminLeadsRoute = AdminLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDeletedRoute = AdminDeletedRouteImport.update({
+  id: '/deleted',
+  path: '/deleted',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminClassesRoute = AdminClassesRouteImport.update({
   id: '/classes',
   path: '/classes',
   getParentRoute: () => AdminRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   id: '/.lovable/oauth/consent',
   path: '/.lovable/oauth/consent',
@@ -146,74 +221,110 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/match': typeof MatchRoute
+  '/mcp': typeof McpRoute
+  '/privacy': typeof PrivacyRoute
   '/search': typeof SearchRoute
+  '/terms': typeof TermsRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/classes': typeof AdminClassesRoute
+  '/admin/deleted': typeof AdminDeletedRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/locations': typeof AdminLocationsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/moderation': typeof AdminModerationRoute
+  '/admin/nav': typeof AdminNavRoute
   '/admin/schools': typeof AdminSchoolsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/views': typeof AdminViewsRoute
+  '/auth/reset': typeof AuthResetRoute
   '/book/$id': typeof BookIdRoute
   '/class/$id': typeof ClassIdRoute
   '/profile/history': typeof ProfileHistoryRoute
+  '/profile/notifications': typeof ProfileNotificationsRoute
   '/profile/saved': typeof ProfileSavedRoute
-  '/provider/$id': typeof ProviderIdRoute
   '/school/dashboard': typeof SchoolDashboardRoute
   '/school/onboarding': typeof SchoolOnboardingRoute
+  '/schools/$slug': typeof SchoolsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/match': typeof MatchRoute
+  '/mcp': typeof McpRoute
+  '/privacy': typeof PrivacyRoute
   '/search': typeof SearchRoute
+  '/terms': typeof TermsRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/classes': typeof AdminClassesRoute
+  '/admin/deleted': typeof AdminDeletedRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/locations': typeof AdminLocationsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/moderation': typeof AdminModerationRoute
+  '/admin/nav': typeof AdminNavRoute
   '/admin/schools': typeof AdminSchoolsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/views': typeof AdminViewsRoute
+  '/auth/reset': typeof AuthResetRoute
   '/book/$id': typeof BookIdRoute
   '/class/$id': typeof ClassIdRoute
   '/profile/history': typeof ProfileHistoryRoute
+  '/profile/notifications': typeof ProfileNotificationsRoute
   '/profile/saved': typeof ProfileSavedRoute
-  '/provider/$id': typeof ProviderIdRoute
   '/school/dashboard': typeof SchoolDashboardRoute
   '/school/onboarding': typeof SchoolOnboardingRoute
+  '/schools/$slug': typeof SchoolsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/match': typeof MatchRoute
+  '/mcp': typeof McpRoute
+  '/privacy': typeof PrivacyRoute
   '/search': typeof SearchRoute
+  '/terms': typeof TermsRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/classes': typeof AdminClassesRoute
+  '/admin/deleted': typeof AdminDeletedRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/locations': typeof AdminLocationsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/moderation': typeof AdminModerationRoute
+  '/admin/nav': typeof AdminNavRoute
   '/admin/schools': typeof AdminSchoolsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/views': typeof AdminViewsRoute
+  '/auth/reset': typeof AuthResetRoute
   '/book/$id': typeof BookIdRoute
   '/class/$id': typeof ClassIdRoute
   '/profile/history': typeof ProfileHistoryRoute
+  '/profile/notifications': typeof ProfileNotificationsRoute
   '/profile/saved': typeof ProfileSavedRoute
-  '/provider/$id': typeof ProviderIdRoute
   '/school/dashboard': typeof SchoolDashboardRoute
   '/school/onboarding': typeof SchoolOnboardingRoute
+  '/schools/$slug': typeof SchoolsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -222,97 +333,161 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/match'
+    | '/mcp'
+    | '/privacy'
     | '/search'
+    | '/terms'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/classes'
+    | '/admin/deleted'
     | '/admin/leads'
+    | '/admin/locations'
     | '/admin/login'
+    | '/admin/moderation'
+    | '/admin/nav'
     | '/admin/schools'
     | '/admin/settings'
     | '/admin/users'
     | '/admin/views'
+    | '/auth/reset'
     | '/book/$id'
     | '/class/$id'
     | '/profile/history'
+    | '/profile/notifications'
     | '/profile/saved'
-    | '/provider/$id'
     | '/school/dashboard'
     | '/school/onboarding'
+    | '/schools/$slug'
     | '/admin/'
     | '/profile/'
     | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/match'
+    | '/mcp'
+    | '/privacy'
     | '/search'
+    | '/terms'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/classes'
+    | '/admin/deleted'
     | '/admin/leads'
+    | '/admin/locations'
     | '/admin/login'
+    | '/admin/moderation'
+    | '/admin/nav'
     | '/admin/schools'
     | '/admin/settings'
     | '/admin/users'
     | '/admin/views'
+    | '/auth/reset'
     | '/book/$id'
     | '/class/$id'
     | '/profile/history'
+    | '/profile/notifications'
     | '/profile/saved'
-    | '/provider/$id'
     | '/school/dashboard'
     | '/school/onboarding'
+    | '/schools/$slug'
     | '/admin'
     | '/profile'
     | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/auth'
     | '/match'
+    | '/mcp'
+    | '/privacy'
     | '/search'
+    | '/terms'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/classes'
+    | '/admin/deleted'
     | '/admin/leads'
+    | '/admin/locations'
     | '/admin/login'
+    | '/admin/moderation'
+    | '/admin/nav'
     | '/admin/schools'
     | '/admin/settings'
     | '/admin/users'
     | '/admin/views'
+    | '/auth/reset'
     | '/book/$id'
     | '/class/$id'
     | '/profile/history'
+    | '/profile/notifications'
     | '/profile/saved'
-    | '/provider/$id'
     | '/school/dashboard'
     | '/school/onboarding'
+    | '/schools/$slug'
     | '/admin/'
     | '/profile/'
     | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   MatchRoute: typeof MatchRoute
+  McpRoute: typeof McpRoute
+  PrivacyRoute: typeof PrivacyRoute
   SearchRoute: typeof SearchRoute
+  TermsRoute: typeof TermsRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   BookIdRoute: typeof BookIdRoute
   ClassIdRoute: typeof ClassIdRoute
   ProfileHistoryRoute: typeof ProfileHistoryRoute
+  ProfileNotificationsRoute: typeof ProfileNotificationsRoute
   ProfileSavedRoute: typeof ProfileSavedRoute
-  ProviderIdRoute: typeof ProviderIdRoute
   SchoolDashboardRoute: typeof SchoolDashboardRoute
   SchoolOnboardingRoute: typeof SchoolOnboardingRoute
+  SchoolsSlugRoute: typeof SchoolsSlugRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search': {
       id: '/search'
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/match': {
@@ -357,6 +532,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/schools/$slug': {
+      id: '/schools/$slug'
+      path: '/schools/$slug'
+      fullPath: '/schools/$slug'
+      preLoaderRoute: typeof SchoolsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/school/onboarding': {
       id: '/school/onboarding'
       path: '/school/onboarding'
@@ -371,18 +553,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SchoolDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/provider/$id': {
-      id: '/provider/$id'
-      path: '/provider/$id'
-      fullPath: '/provider/$id'
-      preLoaderRoute: typeof ProviderIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/profile/saved': {
       id: '/profile/saved'
       path: '/profile/saved'
       fullPath: '/profile/saved'
       preLoaderRoute: typeof ProfileSavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/notifications': {
+      id: '/profile/notifications'
+      path: '/profile/notifications'
+      fullPath: '/profile/notifications'
+      preLoaderRoute: typeof ProfileNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile/history': {
@@ -405,6 +587,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/book/$id'
       preLoaderRoute: typeof BookIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/reset': {
+      id: '/auth/reset'
+      path: '/reset'
+      fullPath: '/auth/reset'
+      preLoaderRoute: typeof AuthResetRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/admin/views': {
       id: '/admin/views'
@@ -434,11 +623,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSchoolsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/nav': {
+      id: '/admin/nav'
+      path: '/nav'
+      fullPath: '/admin/nav'
+      preLoaderRoute: typeof AdminNavRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/moderation': {
+      id: '/admin/moderation'
+      path: '/moderation'
+      fullPath: '/admin/moderation'
+      preLoaderRoute: typeof AdminModerationRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/locations': {
+      id: '/admin/locations'
+      path: '/locations'
+      fullPath: '/admin/locations'
+      preLoaderRoute: typeof AdminLocationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/leads': {
@@ -448,12 +658,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLeadsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/deleted': {
+      id: '/admin/deleted'
+      path: '/deleted'
+      fullPath: '/admin/deleted'
+      preLoaderRoute: typeof AdminDeletedRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/classes': {
       id: '/admin/classes'
       path: '/classes'
       fullPath: '/admin/classes'
       preLoaderRoute: typeof AdminClassesRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/.lovable/oauth/consent': {
       id: '/.lovable/oauth/consent'
@@ -467,8 +705,12 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminClassesRoute: typeof AdminClassesRoute
+  AdminDeletedRoute: typeof AdminDeletedRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
+  AdminLocationsRoute: typeof AdminLocationsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminModerationRoute: typeof AdminModerationRoute
+  AdminNavRoute: typeof AdminNavRoute
   AdminSchoolsRoute: typeof AdminSchoolsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -478,8 +720,12 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminClassesRoute: AdminClassesRoute,
+  AdminDeletedRoute: AdminDeletedRoute,
   AdminLeadsRoute: AdminLeadsRoute,
+  AdminLocationsRoute: AdminLocationsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminModerationRoute: AdminModerationRoute,
+  AdminNavRoute: AdminNavRoute,
   AdminSchoolsRoute: AdminSchoolsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
@@ -489,21 +735,39 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AuthRouteChildren {
+  AuthResetRoute: typeof AuthResetRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthResetRoute: AuthResetRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   MatchRoute: MatchRoute,
+  McpRoute: McpRoute,
+  PrivacyRoute: PrivacyRoute,
   SearchRoute: SearchRoute,
+  TermsRoute: TermsRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   BookIdRoute: BookIdRoute,
   ClassIdRoute: ClassIdRoute,
   ProfileHistoryRoute: ProfileHistoryRoute,
+  ProfileNotificationsRoute: ProfileNotificationsRoute,
   ProfileSavedRoute: ProfileSavedRoute,
-  ProviderIdRoute: ProviderIdRoute,
   SchoolDashboardRoute: SchoolDashboardRoute,
   SchoolOnboardingRoute: SchoolOnboardingRoute,
+  SchoolsSlugRoute: SchoolsSlugRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

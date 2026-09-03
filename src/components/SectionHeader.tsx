@@ -1,18 +1,15 @@
 import { ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useT } from "@/lib/i18n";
 
 export function SectionHeader({
-                                title,
-                                subtitle,
-                                href,
-                              }: {
+  title,
+  subtitle,
+  href,
+}: {
   title: string;
   subtitle?: string;
   href?: string;
 }) {
-  const t = useT();
-
   return (
     <div className="flex items-end justify-between px-4 pb-2 pt-6">
       <div>
@@ -24,7 +21,7 @@ export function SectionHeader({
           to={href}
           className="flex items-center gap-0.5 text-sm font-semibold text-primary-strong hover:underline"
         >
-          {t("common.seeAll")} <ChevronRight className="h-4 w-4" />
+          See all <ChevronRight className="h-4 w-4" />
         </Link>
       )}
     </div>

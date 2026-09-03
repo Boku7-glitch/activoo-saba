@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
-// აუცილებელია Leaflet-ის CSS სტილების იმპორტი, რომ რუკა არ დაიშალოს
+import { useNavigate } from "@tanstack/react-router";
 import "leaflet/dist/leaflet.css";
 
 export interface MapLocation {
   id?: string;
-  providerId?: string; // პროვაიდერის/სკოლის ID (მაგ: "codekids-tbilisi")
-  href?: string;       // ან პირდაპირი URL (მაგ: "/provider/codekids-tbilisi")
+  providerId?: string;
+  href?: string;
   lat: number;
   lng: number;
   title?: string;
@@ -17,36 +17,73 @@ interface ClassLocationMapProps {
   center?: { lat: number; lng: number };
   location?: MapLocation;
   locations?: MapLocation[];
+  lat?: number | null;
+  lng?: number | null;
+  title?: string;
   zoom?: number;
   className?: string;
 }
 
 export function ClassLocationMap({
-                                   center,
-                                   location,
-                                   locations = [],
-                                   zoom = 14,
-                                   className = "h-full w-full rounded-3xl overflow-hidden min-h-[300px]",
-                                 }: ClassLocationMapProps) {
+  center,
+  location,
+  locations = [],
+  lat,
+  lng,
+  title,
+  zoom = 14,
+  className = "h-full w-full rounded-2xl overflow-hidden min-h-[220px]",
+}: ClassLocationMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const navigate = useNavigate();
 
-  const allLocations: MapLocation[] = location ? [location] : locations;
+  const resolvedLoc: MapLocation | null =
+    location ||
+    (lat != null && lng != null
+      ? { lat, lng, title }
+      : null);
+
+  const allLocations: MapLocation[] = resolvedLoc
+    ? [resolvedLoc]
+    : locations.filter((l) => l.lat != null && l.lng != null);
+
+  useEffect(() => {
+    const container = mapRef.current;
+    if (!container) return;
+
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const link = target?.closest<HTMLAnchorElement>("a[data-school-link]");
+      if (link) {
+        const href = link.getAttribute("href") || link.getAttribute("data-href");
+        if (href) {
+          e.preventDefault();
+          e.stopPropagation();
+          navigate({ to: href as any });
+        }
+      }
+    };
+
+    container.addEventListener("click", handleGlobalClick);
+    return () => {
+      container.removeEventListener("click", handleGlobalClick);
+    };
+  }, [navigate]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
-    if (!center && !location && locations.length === 0) return;
+    if (!center && allLocations.length === 0) return;
 
     let isMounted = true;
 
     const defaultCenter =
       center ||
-      (location ? { lat: location.lat, lng: location.lng } : null) ||
-      (locations.length > 0
-        ? { lat: locations[0].lat, lng: locations[0].lng }
+      (resolvedLoc ? { lat: resolvedLoc.lat, lng: resolvedLoc.lng } : null) ||
+      (allLocations.length > 0
+        ? { lat: allLocations[0].lat, lng: allLocations[0].lng }
         : { lat: 41.7151, lng: 44.8271 });
 
-    // "window is not defined" ერორის აცილება dynamic import-ით (მხოლოდ ბრაუზერში გაეშვება)
     import("leaflet").then((L) => {
       if (!isMounted || !mapRef.current || mapInstanceRef.current) return;
 
@@ -58,19 +95,17 @@ export function ClassLocationMap({
 
       mapInstanceRef.current = map;
 
-      // მკვეთრი და მკაფიო OpenStreetMap ფენის დამატება
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
-      // მარკერების დამატება
       allLocations.forEach((loc) => {
         const customIcon = L.divIcon({
           className: "bg-transparent border-none",
           html: loc.price
-            ? `<div class="flex items-center justify-center rounded-full bg-purple-600 px-3 py-1.5 text-xs font-black text-white shadow-lg cursor-pointer transition transform hover:scale-110">${loc.price} ₾</div>`
-            : `<div class="w-6 h-6 bg-purple-600 rounded-full border-2 border-white shadow-md"></div>`,
+            ? `<div class="flex items-center justify-center rounded-full bg-primary px-3 py-1.5 text-xs font-black text-primary-foreground shadow-lg cursor-pointer transition transform hover:scale-110">${loc.price} ₾</div>`
+            : `<div class="w-6 h-6 bg-primary rounded-full border-2 border-white shadow-md cursor-pointer transition transform hover:scale-110"></div>`,
           iconSize: [40, 40],
           iconAnchor: [20, 20],
           popupAnchor: [0, -20],
@@ -79,26 +114,28 @@ export function ClassLocationMap({
         const marker = L.marker([loc.lat, loc.lng], { icon: customIcon }).addTo(map);
 
         if (loc.title || loc.address) {
-          // გამოვთვალოთ ლინკი: href -> providerId -> id
           const targetUrl =
             loc.href ||
-            (loc.providerId ? `/provider/${loc.providerId}` : null) ||
-            (loc.id ? `/provider/${loc.id}` : null);
+            (loc.providerId ? `/schools/${loc.providerId}` : null) ||
+            (loc.id ? `/schools/${loc.id}` : null);
 
           const titleHtml = targetUrl
-            ? `<a href="${targetUrl}" style="font-size: 13px; font-weight: 800; color: #7c3aed; text-decoration: none; display: inline-block; transition: color 0.2s;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${loc.title}</a>`
+            ? `<a href="${targetUrl}" data-school-link="true" style="font-size: 14px; font-weight: 800; color: #7c3aed; text-decoration: underline; text-underline-offset: 3px; display: inline-block; cursor: pointer; line-height: 1.3;">${loc.title}</a>`
             : `<strong style="font-size: 13px; color: #111;">${loc.title}</strong>`;
 
           marker.bindPopup(`
-            <div style="font-family: system-ui, sans-serif; padding: 2px;">
-              ${loc.title ? titleHtml : ""}
-              ${loc.address ? `<div style="font-size: 11px; color: #666; margin-top: 3px;">📍 ${loc.address}</div>` : ""}
+            <div style="font-family: system-ui, -apple-system, sans-serif; padding: 4px; min-width: 120px;">
+              ${loc.title ? `<div>${titleHtml}</div>` : ""}
+              ${loc.address ? `<div style="font-size: 11px; color: #666; margin-top: 4px; font-weight: 500;">📍 ${loc.address}</div>` : ""}
             </div>
           `);
+
+          if (allLocations.length === 1) {
+            marker.openPopup();
+          }
         }
       });
 
-      // აიძულებს რუკას გადაითვალოს ზომა, რომ ბოლომდე შეავსოს ბლოკი და არ დარჩეს ნაწილობრივი
       setTimeout(() => {
         map.invalidateSize();
       }, 250);
@@ -111,12 +148,12 @@ export function ClassLocationMap({
         mapInstanceRef.current = null;
       }
     };
-  }, [center, location, locations, zoom]);
+  }, [center, resolvedLoc, allLocations, zoom]);
 
-  if (!center && !location && locations.length === 0) {
+  if (!center && allLocations.length === 0) {
     return (
       <div className={`${className} flex items-center justify-center bg-muted/40`}>
-        <span className="text-sm text-muted-foreground">ლოკაცია მითითებული არ არის</span>
+        <span className="text-xs text-muted-foreground">Location not specified</span>
       </div>
     );
   }

@@ -27,9 +27,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadRole = async (uid: string | undefined) => {
     if (!uid) { setRole(null); setRoles([]); return; }
     const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-    const list = (data ?? []).map((r) => r.role as AppRole);
+    let list = (data ?? []).map((r) => r.role as AppRole);
+    // Apply role chosen at sign-up once the email is confirmed and a session exists
+    if (list.length === 0 && typeof window !== "undefined") {
+      const pending = window.localStorage.getItem("activoo_pending_role");
+      if (pending === "parent" || pending === "school") {
+        const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: pending });
+        window.localStorage.removeItem("activoo_pending_role");
+        if (!error) list = [pending];
+      }
+    }
     setRoles(list);
-
     // Prefer admin > school > parent for primary "role" used in routing
     const primary: AppRole | null = list.includes("admin")
       ? "admin"
@@ -39,35 +47,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ? "parent"
           : null;
     setRole(primary);
-  };
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function initializeAuth() {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      if (mounted) {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        await loadRole(currentSession?.user?.id);
-        setLoading(false);
+    // Enforce moderation: blocked or deleted users cannot stay signed in
+    if (!list.includes("admin")) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("blocked_at, deleted_at, block_reason, delete_reason")
+        .eq("id", uid)
+        .maybeSingle();
+      const p = prof as any;
+      if (p && (p.blocked_at || p.deleted_at)) {
+        const reason = p.block_reason || p.delete_reason;
+        await supabase.auth.signOut();
+        setRole(null);
+        setRoles([]);
+        if (typeof window !== "undefined") {
+          const { toast } = await import("sonner");
+          toast.error(
+            p.deleted_at ? "Your account has been removed." : "Your account has been blocked.",
+            { description: reason || "Contact support if you think this is a mistake." },
+          );
+        }
       }
     }
+  };
 
-    initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      if (mounted) {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        await loadRole(newSession?.user?.id);
-      }
+  useEffect(() => {
+    // 1. Subscribe FIRST
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      // defer supabase calls to avoid deadlock
+      setTimeout(() => { loadRole(newSession?.user?.id); }, 0);
     });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    // 2. Then read existing session
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s);
+      setUser(s?.user ?? null);
+      loadRole(s?.user?.id).finally(() => setLoading(false));
+    });
+    return () => { sub.subscription.unsubscribe(); };
   }, []);
 
   const signOut = async () => {

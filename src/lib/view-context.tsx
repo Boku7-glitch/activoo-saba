@@ -6,7 +6,9 @@ export interface ViewRow {
   id: string;
   slug: string;
   name: string;
+  name_en?: string | null;
   icon: string;
+  icon_url?: string | null;
   accent_hex: string;
   accent_secondary_hex: string;
   sort_order: number;
@@ -18,7 +20,9 @@ export interface CategoryRow {
   view_id: string;
   slug: string;
   name: string;
+  name_en?: string | null;
   icon: string;
+  icon_url?: string | null;
   sort_order: number;
 }
 
@@ -27,6 +31,9 @@ export interface SubcategoryRow {
   category_id: string;
   slug: string;
   name: string;
+  name_en?: string | null;
+  icon?: string | null;
+  icon_url?: string | null;
   sort_order: number;
 }
 
@@ -51,12 +58,27 @@ const Ctx = createContext<ViewContextValue | null>(null);
 
 const STORAGE_KEY = "activoo:view";
 
+const DEFAULT_VIEWS: ViewRow[] = [
+  { id: "v-education", slug: "education", name: "განათლება", name_en: "Education", icon: "GraduationCap", accent_hex: "#6366F1", accent_secondary_hex: "#818CF8", sort_order: 1, is_active: true },
+  { id: "v-activity", slug: "activity", name: "აქტივობა", name_en: "Activity", icon: "Activity", accent_hex: "#EC4899", accent_secondary_hex: "#F472B6", sort_order: 2, is_active: true },
+  { id: "v-masterclasses", slug: "masterclasses", name: "მასტერკლასები", name_en: "Masterclasses", icon: "Sparkles", accent_hex: "#F59E0B", accent_secondary_hex: "#FBBF24", sort_order: 3, is_active: true },
+  { id: "v-services", slug: "services", name: "სერვისები", name_en: "Services", icon: "Briefcase", accent_hex: "#10B981", accent_secondary_hex: "#34D399", sort_order: 4, is_active: true },
+];
+
+const DEFAULT_CATEGORIES: CategoryRow[] = [
+  { id: "c-art", view_id: "v-education", slug: "creativity", name: "შემოქმედება", name_en: "Art & Creativity", icon: "🎨", sort_order: 1 },
+  { id: "c-it", view_id: "v-education", slug: "it", name: "IT და კოდინგი", name_en: "IT & Coding", icon: "💻", sort_order: 2 },
+  { id: "c-sports", view_id: "v-activity", slug: "sports", name: "სპორტი", name_en: "Sports", icon: "⚽", sort_order: 3 },
+  { id: "c-dev", view_id: "v-education", slug: "development", name: "განვითარება", name_en: "Early Development", icon: "🧠", sort_order: 4 },
+  { id: "c-lang", view_id: "v-education", slug: "languages", name: "ენები", name_en: "Languages", icon: "🌍", sort_order: 5 },
+];
+
 export function ViewProvider({ children }: { children: ReactNode }) {
-  const [views, setViews] = useState<ViewRow[]>([]);
-  const [categories, setCategories] = useState<CategoryRow[]>([]);
+  const [views, setViews] = useState<ViewRow[]>(DEFAULT_VIEWS);
+  const [categories, setCategories] = useState<CategoryRow[]>(DEFAULT_CATEGORIES);
   const [subcategories, setSubcategories] = useState<SubcategoryRow[]>([]);
   const [filters, setFilters] = useState<FilterRow[]>([]);
-  const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [activeSlug, setActiveSlug] = useState<string | null>("education");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,14 +89,20 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       supabase.from("view_filters").select("*").order("sort_order"),
     ]).then(([v, c, s, f]) => {
       const vs = (v.data as ViewRow[] | null) ?? [];
-      setViews(vs);
-      setCategories((c.data as CategoryRow[] | null) ?? []);
+      const cs = (c.data as CategoryRow[] | null) ?? [];
+      setViews(vs.length > 0 ? vs : DEFAULT_VIEWS);
+      setCategories(cs.length > 0 ? cs : DEFAULT_CATEGORIES);
       setSubcategories((s.data as SubcategoryRow[] | null) ?? []);
       setFilters((f.data as FilterRow[] | null) ?? []);
       // Initial active view: localStorage -> first view
+      const activeList = vs.length > 0 ? vs : DEFAULT_VIEWS;
       const stored = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
-      const initial = vs.find((x) => x.slug === stored) ?? vs[0];
+      const initial = activeList.find((x) => x.slug === stored) ?? activeList[0];
       if (initial) setActiveSlug(initial.slug);
+      setLoading(false);
+    }).catch(() => {
+      setViews(DEFAULT_VIEWS);
+      setCategories(DEFAULT_CATEGORIES);
       setLoading(false);
     });
   }, []);

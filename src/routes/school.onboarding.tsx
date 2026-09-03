@@ -1,242 +1,329 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Plus, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
-import { CATEGORIES, CATEGORY_KEYS, DISTRICTS, type CategoryKey } from "@/lib/categories";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { ImageUploader } from "@/components/ImageUploader";
+import { AddressMapPicker } from "@/components/AddressMapPicker";
+import { CityDistrictPicker } from "@/components/SchoolEditor";
+import { WorkingHoursEditor } from "@/components/WorkingHoursEditor";
+import {
+  ClassEditorModal,
+  type ClassEditable,
+  type ViewOption,
+  type CatOption,
+  type SubOption,
+} from "@/components/ClassEditor";
 
-export const Route = createFileRoute("/school/onboarding")({ component: OnboardingPage });
+export const Route = createFileRoute("/school/onboarding")({
+  component: OnboardingPage,
+  head: () => ({
+    meta: [
+      { title: "Create your school page — activoo" },
+      { name: "description", content: "Register your school on activoo and publish your clubs for parents to discover." },
+      { property: "og:title", content: "Create your school page — activoo" },
+      { property: "og:description", content: "Register your school on activoo and publish your clubs." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+});
+
+interface SchoolForm {
+  name: string;
+  name_en: string;
+  city: string;
+  city_en: string | null;
+  district: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  phone: string;
+  email: string;
+  website: string;
+  working_hours: string;
+  instagram: string;
+  tiktok: string;
+  facebook: string;
+  whatsapp: string;
+  description: string;
+  description_en: string;
+  about: string;
+  about_en: string;
+  logo_url: string | null;
+  cover_image_url: string | null;
+}
+
+const empty: SchoolForm = {
+  name: "", name_en: "", city: "", city_en: null, district: "", address: "",
+  lat: null, lng: null, phone: "", email: "", website: "", working_hours: "",
+  instagram: "", facebook: "", whatsapp: "", tiktok: "",
+  description: "", description_en: "", about: "", about_en: "",
+  logo_url: null, cover_image_url: null,
+};
 
 function OnboardingPage() {
-  const { user, role, loading } = useAuth();
+  const { user, loading, roles } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
+  const [form, setForm] = useState<SchoolForm>(empty);
+  const [saving, setSaving] = useState(false);
+  const [school, setSchool] = useState<{ id: string; slug: string; name: string } | null>(null);
+  const [classes, setClasses] = useState<{ id: string; title: string }[]>([]);
 
-  // Step 1
-  const [name, setName] = useState("");
-  const [district, setDistrict] = useState<typeof DISTRICTS[number] | "">("");
-  const [phone, setPhone] = useState("");
-  const [category, setCategory] = useState<CategoryKey>("creativity");
-  const [ageMin, setAgeMin] = useState("4");
-  const [ageMax, setAgeMax] = useState("12");
-
-  // Step 2 (AI)
-  const [shortDesc, setShortDesc] = useState("");
-  const [generated, setGenerated] = useState("");
-  const [generating, setGenerating] = useState(false);
-
-  // Step 3
-  const [price, setPrice] = useState("50");
-  const [schedule, setSchedule] = useState("");
+  // class editor data
+  const [editingClass, setEditingClass] = useState<ClassEditable | null>(null);
+  const [views, setViews] = useState<ViewOption[]>([]);
+  const [cats, setCats] = useState<CatOption[]>([]);
+  const [subs, setSubs] = useState<SubOption[]>([]);
 
   useEffect(() => {
     if (loading) return;
     if (!user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
 
-  const generate = () => {
-    if (!shortDesc.trim()) return;
-    setGenerating(true);
-    setTimeout(() => {
-      setGenerated(
-        `${shortDesc.trim()}\n\nWhat your child will love:\n• Friendly, certified instructors who make learning fun\n• Small group sizes for personal attention\n• A safe, welcoming space designed for kids\n• Real progress they can show off at home\n\nJoin a community of families who chose ${name || "us"} to spark their child's curiosity.`
-      );
-      setGenerating(false);
-    }, 900);
-  };
-
-  const publish = async () => {
-    if (!user) return;
-    setSubmitting(true);
-    try {
-      // Ensure school role
-      if (role !== "school") {
-        await supabase.from("user_roles").insert({ user_id: user.id, role: "school" });
-      }
-      const { data: school, error: sErr } = await supabase.from("schools")
-        .insert({ owner_id: user.id, name, district: district || "Vake", phone, description: generated || shortDesc })
-        .select("id").single();
-      if (sErr || !school) throw sErr;
-      const cat = CATEGORIES[category];
-      const { error: cErr } = await supabase.from("classes").insert({
-        school_id: school.id,
-        title: `${cat.label} class at ${name}`,
-        category,
-        description: generated || shortDesc,
-        age_min: Number(ageMin),
-        age_max: Number(ageMax),
-        price_from: Number(price),
-        format: "group",
-        language: "English",
-        schedule,
-        image_url: null,
-        is_new: true,
-        is_featured: false,
+  // If the user already has a school, send them to the dashboard
+  useEffect(() => {
+    if (!user || school) return;
+    supabase.from("schools").select("id,slug,name").eq("owner_id", user.id).is("deleted_at", null).limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) navigate({ to: "/school/dashboard" });
       });
-      if (cErr) throw cErr;
-      toast.success("Your school is live on activoo!");
-      setDone(true);
-      setTimeout(() => navigate({ to: "/school/dashboard" }), 1500);
+  }, [user, school, navigate]);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from("views").select("id,name,slug").order("sort_order"),
+      supabase.from("view_categories").select("id,name,view_id").order("sort_order"),
+      supabase.from("view_subcategories").select("id,name,category_id").order("sort_order"),
+    ]).then(([vw, vc, vs]) => {
+      setViews((vw.data as ViewOption[]) ?? []);
+      setCats((vc.data as CatOption[]) ?? []);
+      setSubs((vs.data as SubOption[]) ?? []);
+    });
+  }, []);
+
+  const createSchool = async () => {
+    if (!user) return;
+    if (!form.name.trim()) return toast.error("School name is required");
+    if (!form.district) return toast.error("Please select city and district");
+    setSaving(true);
+    try {
+      if (!roles.includes("school") && !roles.includes("admin")) {
+        throw new Error("This account is registered as a regular user. Create a school account to publish a school.");
+      }
+      const social: Record<string, string> = {};
+      if (form.instagram) social.instagram = form.instagram;
+      if (form.facebook) social.facebook = form.facebook;
+      if (form.whatsapp) social.whatsapp = form.whatsapp;
+      if (form.tiktok) social.tiktok = form.tiktok;
+
+      const { data, error } = await supabase.from("schools").insert({
+        owner_id: user.id,
+        name: form.name.trim(),
+        name_en: form.name_en || null,
+        city: form.city || null,
+        city_en: form.city_en,
+        district: form.district,
+        address: form.address || null,
+        lat: form.lat,
+        lng: form.lng,
+        phone: form.phone || null,
+        email: form.email || null,
+        website: form.website || null,
+        working_hours: form.working_hours || null,
+        description: form.description || null,
+        description_en: form.description_en || null,
+        about: form.about || null,
+        about_en: form.about_en || null,
+        logo_url: form.logo_url,
+        cover_image_url: form.cover_image_url,
+        social_links: social,
+        is_visible: false,
+      }).select("id,slug,name").single();
+      if (error) throw error;
+      setSchool(data as { id: string; slug: string; name: string });
+      toast.success("School page created");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Something went wrong";
-      toast.error(msg);
-    } finally { setSubmitting(false); }
+      toast.error(e instanceof Error ? e.message : "Could not create the school");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (done) {
+  const reloadClasses = async () => {
+    if (!school) return;
+    const { data } = await supabase.from("classes").select("id,title").eq("school_id", school.id)
+      .is("deleted_at", null).order("created_at", { ascending: false });
+    setClasses((data as { id: string; title: string }[]) ?? []);
+  };
+
+  if (!user) return <AppShell hideViewTabs><div className="p-10 text-center text-muted-foreground">Loading…</div></AppShell>;
+
+  const canCreateSchool = roles.includes("school") || roles.includes("admin");
+  if (!canCreateSchool) {
     return (
-      <AppShell hideTabBar hideHeader>
-        <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-          <CheckCircle2 className="h-16 w-16 text-accent-strong" />
-          <h1 className="mt-4 text-2xl font-extrabold">You're live! 🎉</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Taking you to your dashboard…</p>
+      <AppShell hideViewTabs>
+        <div className="mx-auto max-w-lg px-5 py-16 text-center">
+          <h1 className="text-2xl font-extrabold">This is a personal account</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your account is registered as a regular user — you can search classes, save favourites and get replies from schools.
+            Publishing a school requires a separate school account.
+          </p>
+          <div className="mt-6 flex flex-col gap-2">
+            <Link to="/profile" className="flex h-12 items-center justify-center rounded-2xl bg-foreground text-sm font-bold text-background shadow-pop">
+              Go to my profile
+            </Link>
+            <Link to="/search" className="flex h-12 items-center justify-center rounded-2xl bg-surface-soft text-sm font-semibold">
+              Browse classes
+            </Link>
+          </div>
         </div>
       </AppShell>
     );
   }
 
-  const canNext = (step === 0 && name && district) || (step === 1 && (generated || shortDesc)) || (step === 2 && price);
+  /* ---------- Step 2: school created, add clubs ---------- */
+  if (school) {
+    return (
+      <AppShell hideViewTabs>
+        <div className="mx-auto max-w-2xl px-5 pb-24 pt-6">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-8 w-8 text-accent-strong" />
+            <div>
+              <h1 className="text-2xl font-extrabold">{school.name} is ready</h1>
+              <p className="text-sm text-muted-foreground">It is still unpublished — preview it, then publish when everything looks right.</p>
+            </div>
+          </div>
 
-  return (
-    <AppShell hideTabBar hideHeader>
-      <div className="flex items-center gap-3 px-4 py-3">
-        <button
-          onClick={() => (step === 0 ? navigate({ to: "/" }) : setStep(step - 1))}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-soft"
-          aria-label="Back"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="flex flex-1 gap-1.5">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= step ? "bg-foreground" : "bg-muted")} />
-          ))}
+          <div className="mt-6 space-y-2">
+            {classes.map((c) => (
+              <div key={c.id} className="rounded-2xl bg-surface p-3.5 font-semibold shadow-soft">{c.title}</div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setEditingClass({
+              title: "", category: "creativity", age_min: 5, age_max: 12, price_from: 0,
+              format: "group", formats: ["group"], schedule_days: [], category_ids: [],
+              subcategory_ids: [], is_visible: true, school_id: school.id,
+            })}
+            className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl bg-foreground text-sm font-bold text-background shadow-pop"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Add a club
+          </button>
+
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <a href={`/schools/${school.slug}?preview=1`} target="_blank" rel="noreferrer"
+              className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-surface-soft text-sm font-semibold">
+              <ExternalLink className="h-4 w-4" /> Preview school page
+            </a>
+            <Link to="/school/dashboard"
+              className="flex h-11 items-center justify-center rounded-2xl bg-surface-soft text-sm font-semibold">
+              Go to dashboard
+            </Link>
+          </div>
         </div>
-      </div>
 
-      <div className="px-5 pb-32">
-        {step === 0 && (
-          <div className="animate-fade-up space-y-4">
-            <div>
-              <h1 className="text-2xl font-extrabold">Tell us about your school</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Step 1 of 4 — basic info</p>
-            </div>
-            <Field label="School name">
-              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} placeholder="Studio Vibe" className={inputCls} />
-            </Field>
-            <Field label="Phone">
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} placeholder="+995 555 12 34 56" className={inputCls} />
-            </Field>
-            <Field label="District">
-              <div className="flex flex-wrap gap-2">
-                {DISTRICTS.map((d) => (
-                  <button key={d} type="button" onClick={() => setDistrict(d)}
-                    className={cn("rounded-full border px-3.5 py-1.5 text-xs font-semibold",
-                      district === d ? "border-foreground bg-foreground text-background" : "border-border bg-surface")}>
-                    {d}
-                  </button>
-                ))}
-              </div>
-            </Field>
-            <Field label="Main category">
-              <div className="flex flex-wrap gap-2">
-                {CATEGORY_KEYS.map((k) => (
-                  <button key={k} type="button" onClick={() => setCategory(k)}
-                    className={cn("rounded-full border px-3.5 py-1.5 text-xs font-semibold",
-                      category === k ? "border-foreground bg-foreground text-background" : "border-border bg-surface")}>
-                    {CATEGORIES[k].emoji} {CATEGORIES[k].label}
-                  </button>
-                ))}
-              </div>
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Age min"><input type="number" value={ageMin} onChange={(e) => setAgeMin(e.target.value)} className={inputCls} /></Field>
-              <Field label="Age max"><input type="number" value={ageMax} onChange={(e) => setAgeMax(e.target.value)} className={inputCls} /></Field>
-            </div>
-          </div>
+        {editingClass && (
+          <ClassEditorModal
+            cls={editingClass}
+            schools={[{ id: school.id, name: school.name }]}
+            views={views}
+            cats={cats}
+            subs={subs}
+            lockSchool
+            onClose={() => setEditingClass(null)}
+            onSaved={() => { setEditingClass(null); reloadClasses(); }}
+          />
         )}
+      </AppShell>
+    );
+  }
 
-        {step === 1 && (
-          <div className="animate-fade-up space-y-4">
-            <div>
-              <h1 className="text-2xl font-extrabold">Describe your class</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Step 2 of 4 — let AI help you write</p>
-            </div>
-            <Field label="In 2–3 sentences, what makes your class special?">
-              <textarea value={shortDesc} onChange={(e) => setShortDesc(e.target.value)} rows={4} maxLength={500} className={inputCls + " resize-none p-4 h-auto"} placeholder="We teach hip-hop to kids 6–12 in a fun supportive studio…" />
-            </Field>
-            <button type="button" onClick={generate} disabled={generating || !shortDesc.trim()}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-sm font-bold text-foreground shadow-soft disabled:opacity-50">
-              <Sparkles className="h-4 w-4" /> {generating ? "Generating…" : "Generate description with AI"}
-            </button>
-            {generated && (
-              <div>
-                <p className="mb-1.5 text-xs font-semibold">AI-generated (you can edit)</p>
-                <textarea value={generated} onChange={(e) => setGenerated(e.target.value)} rows={10} className={inputCls + " resize-none p-4 h-auto"} />
-              </div>
-            )}
+  /* ---------- Step 1: school details ---------- */
+  return (
+    <AppShell hideViewTabs>
+      <div className="mx-auto max-w-2xl px-5 pb-24 pt-4">
+        <button onClick={() => (window.history.length > 1 ? window.history.back() : navigate({ to: "/" }))}
+          className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+
+        <h1 className="text-2xl font-extrabold">Create your school page</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Everything here is shown on your public school profile. You can edit it any time from your dashboard.
+        </p>
+
+        <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Field label="School name (KA) *" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+          <Field label="School name (EN)" value={form.name_en} onChange={(v) => setForm({ ...form, name_en: v })} />
+
+          <CityDistrictPicker
+            city={form.city}
+            district={form.district}
+            onChange={(v) => setForm({ ...form, city: v.city, city_en: v.city_en, district: v.district })}
+          />
+
+          <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+          <Field label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+          <Field label="Website" value={form.website} onChange={(v) => setForm({ ...form, website: v })} />
+          <div className="md:col-span-2">
+            <WorkingHoursEditor value={form.working_hours} onChange={(v: string) => setForm({ ...form, working_hours: v })} />
           </div>
-        )}
+          <Field label="Instagram URL" value={form.instagram} onChange={(v) => setForm({ ...form, instagram: v })} />
+          <Field label="Facebook URL" value={form.facebook} onChange={(v) => setForm({ ...form, facebook: v })} />
+          <Field label="WhatsApp (number or link)" value={form.whatsapp} onChange={(v) => setForm({ ...form, whatsapp: v })} />
+          <Field label="TikTok URL" value={form.tiktok} onChange={(v) => setForm({ ...form, tiktok: v })} />
 
-        {step === 2 && (
-          <div className="animate-fade-up space-y-4">
-            <div>
-              <h1 className="text-2xl font-extrabold">Price & schedule</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Step 3 of 4</p>
-            </div>
-            <Field label="Price from (₾ / month)">
-              <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className={inputCls} />
-            </Field>
-            <Field label="Schedule">
-              <input value={schedule} onChange={(e) => setSchedule(e.target.value)} maxLength={120} placeholder="Mon, Wed, Fri • 5:00 PM" className={inputCls} />
-            </Field>
+          <div className="md:col-span-2">
+            <Field label="Short description (KA)" value={form.description} onChange={(v) => setForm({ ...form, description: v })} multiline />
           </div>
-        )}
-
-        {step === 3 && (
-          <div className="animate-fade-up space-y-4">
-            <div>
-              <h1 className="text-2xl font-extrabold">Preview & publish</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Step 4 of 4</p>
-            </div>
-            <div className="rounded-3xl bg-surface shadow-card overflow-hidden">
-              <div className="aspect-[4/3] bg-gradient-hero flex items-center justify-center text-5xl">{CATEGORIES[category].emoji}</div>
-              <div className="p-4 space-y-2">
-                <p className="text-xs font-semibold text-primary-strong">{CATEGORIES[category].emoji} {CATEGORIES[category].label}</p>
-                <h2 className="font-extrabold">{CATEGORIES[category].label} class at {name}</h2>
-                <p className="text-xs text-muted-foreground">{district} • Ages {ageMin}–{ageMax} • from {price} ₾</p>
-                <p className="text-sm whitespace-pre-line line-clamp-6">{generated || shortDesc}</p>
-              </div>
-            </div>
+          <div className="md:col-span-2">
+            <Field label="Short description (EN)" value={form.description_en} onChange={(v) => setForm({ ...form, description_en: v })} multiline />
           </div>
-        )}
-      </div>
+          <div className="md:col-span-2">
+            <Field label="About the school (KA)" value={form.about} onChange={(v) => setForm({ ...form, about: v })} multiline />
+          </div>
+          <div className="md:col-span-2">
+            <Field label="About the school (EN)" value={form.about_en} onChange={(v) => setForm({ ...form, about_en: v })} multiline />
+          </div>
 
-      <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2 border-t border-border bg-background/95 p-4 backdrop-blur-xl">
-        <button
-          onClick={() => (step < 3 ? setStep(step + 1) : publish())}
-          disabled={!canNext || submitting}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-foreground text-sm font-bold text-background shadow-pop disabled:opacity-40"
-        >
-          {step < 3 ? <>Continue <ArrowRight className="h-4 w-4" /></> : (submitting ? "Publishing…" : "Publish my school")}
+          <ImageUploader label="Logo" folder="schools" value={form.logo_url} onChange={(url) => setForm({ ...form, logo_url: url })} />
+          <ImageUploader label="Cover image" folder="schools" value={form.cover_image_url} onChange={(url) => setForm({ ...form, cover_image_url: url })} />
+
+          <div className="md:col-span-2">
+            <span className="mb-1 block text-xs font-semibold">Address & location on map</span>
+            <AddressMapPicker
+              address={form.address}
+              lat={form.lat}
+              lng={form.lng}
+              onChange={(v) => setForm({ ...form, address: v.address, lat: v.lat, lng: v.lng })}
+            />
+          </div>
+        </div>
+
+        <button onClick={createSchool} disabled={saving}
+          className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl bg-foreground text-sm font-bold text-background shadow-pop disabled:opacity-50">
+          {saving ? "Creating…" : "Create school page"}
         </button>
       </div>
     </AppShell>
   );
 }
 
-const inputCls = "h-12 w-full rounded-2xl border border-border bg-surface px-4 text-sm outline-none focus:border-primary";
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, value, onChange, multiline }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold">{label}</span>
-      {children}
+      <span className="mb-1 block text-xs font-semibold">{label}</span>
+      {multiline ? (
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3}
+          className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
+      ) : (
+        <input value={value} onChange={(e) => onChange(e.target.value)}
+          className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary" />
+      )}
     </label>
   );
 }

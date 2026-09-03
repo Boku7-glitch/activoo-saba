@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { ClassRow } from "@/components/ClassCard";
 import { classImage } from "@/lib/categories";
-// აუცილებელია Leaflet-ის CSS სტილების იმპორტი
 import "leaflet/dist/leaflet.css";
 
 interface Props {
@@ -16,7 +15,6 @@ export function SearchMap({ classes }: Props) {
   const navigate = useNavigate();
   const [active, setActive] = useState<ClassRow | null>(null);
 
-  // ლოკაციების ამოღება
   const points = classes
     .map((c) => {
       const s = c.schools as unknown as { lat?: number | null; lng?: number | null; name?: string } | null;
@@ -24,7 +22,6 @@ export function SearchMap({ classes }: Props) {
     })
     .filter(Boolean) as { c: ClassRow; lat: number; lng: number }[];
 
-  // 1. რუკის ინიციალიზაცია (გაეშვება მხოლოდ ერთხელ)
   useEffect(() => {
     let isMounted = true;
 
@@ -32,7 +29,7 @@ export function SearchMap({ classes }: Props) {
       if (!isMounted || !ref.current || mapInstanceRef.current) return;
 
       const map = L.map(ref.current, {
-        center: [41.7151, 44.8271], // თბილისის კოორდინატები დეფოლტად
+        center: [41.7151, 44.8271],
         zoom: 12,
         scrollWheelZoom: true,
       });
@@ -43,7 +40,6 @@ export function SearchMap({ classes }: Props) {
 
       mapInstanceRef.current = map;
 
-      // ვრწმუნდებით, რომ რუკა ბოლომდე იტვირთება კონტეინერში
       setTimeout(() => {
         map.invalidateSize();
       }, 250);
@@ -58,15 +54,13 @@ export function SearchMap({ classes }: Props) {
     };
   }, []);
 
-  // 2. მარკერების განახლება ყოველ ჯერზე, როცა `classes` (ძებნის რეზულტატი) იცვლება
   useEffect(() => {
-    // თუ რუკა ჯერ არ ჩატვირთულა, დაველოდოთ
     if (!mapInstanceRef.current) return;
 
     import("leaflet").then((L) => {
       const map = mapInstanceRef.current;
+      if (!map) return;
 
-      // ძველი მარკერების წაშლა რუკიდან
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
 
@@ -74,49 +68,41 @@ export function SearchMap({ classes }: Props) {
 
       const bounds = L.latLngBounds([]);
 
-      // ახალი მარკერების დამატება
       points.forEach(({ c, lat, lng }) => {
         const customIcon = L.divIcon({
           className: "bg-transparent border-none",
-          html: `<div class="w-6 h-6 bg-purple-600 rounded-full border-2 border-white shadow-md cursor-pointer transition transform hover:scale-110 hover:bg-purple-500"></div>`,
+          html: `<div class="w-6 h-6 bg-primary rounded-full border-2 border-white shadow-md cursor-pointer transition transform hover:scale-110"></div>`,
           iconSize: [24, 24],
           iconAnchor: [12, 12],
         });
 
         const m = L.marker([lat, lng], { icon: customIcon }).addTo(map);
-
-        // მარკერზე დაჭერისას ვხსნით პოპაპ-ბარათს
         m.on("click", () => setActive(c));
 
         markersRef.current.push(m);
         bounds.extend([lat, lng]);
       });
 
-      // რუკის ზუმის და ცენტრის გასწორება მარკერების მიხედვით
       if (points.length === 1) {
         map.setView(bounds.getCenter(), 15);
       } else {
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
       }
     });
-  }, [classes]); // React-ის წესით, მხოლოდ კლასების შეცვლისას ეშვება
+  }, [classes, points]);
 
   return (
     <div className="relative h-[calc(100vh-220px)] min-h-[400px] w-full overflow-hidden rounded-2xl border border-border bg-muted">
-
-      {/* რუკის კონტეინერი (z-0 რომ პოპაპი ზემოდან მოექცეს) */}
       <div ref={ref} className="absolute inset-0 z-0" />
 
-      {/* ლოკაციების არ არსებობისას გამოტანილი მესიჯი */}
       {points.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div className="rounded-xl bg-background/90 px-4 py-2 text-xs font-medium text-muted-foreground shadow">
-            ლოკაციები არ მოიძებნა
+            No classes with map coordinates found
           </div>
         </div>
       )}
 
-      {/* აქტიური კლასის პოპაპი მარკერზე დაჭერისას */}
       {active && (
         <button
           onClick={() => navigate({ to: "/class/$id", params: { id: active.id } })}
@@ -131,8 +117,8 @@ export function SearchMap({ classes }: Props) {
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-foreground">{active.title}</p>
               <p className="truncate text-xs text-muted-foreground">{active.schools?.name}</p>
-              <p className="mt-1 text-xs font-semibold text-purple-600">
-                {active.price_from > 0 ? `დან ${active.price_from} ₾` : "უფასო"}
+              <p className="mt-1 text-xs font-semibold text-primary">
+                {active.price_from > 0 ? `from ${active.price_from} ₾` : "Free"}
               </p>
             </div>
           </div>

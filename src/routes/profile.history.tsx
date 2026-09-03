@@ -6,7 +6,12 @@ import { ClassCard, type ClassRow } from "@/components/ClassCard";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/profile/history")({ component: HistoryPage });
+export const Route = createFileRoute("/profile/history")({
+  component: HistoryPage,
+  head: () => ({
+    meta: [{ title: "View History — activoo" }],
+  }),
+});
 
 function HistoryPage() {
   const { user, loading } = useAuth();
@@ -17,7 +22,7 @@ function HistoryPage() {
     if (loading) return;
     if (!user) { navigate({ to: "/auth" }); return; }
     supabase.from("viewed_classes")
-      .select("viewed_at,classes(id,title,category,age_min,age_max,price_from,image_url,is_new,schools(name,district,rating))")
+      .select("viewed_at,classes(id,title,category,age_min,age_max,price_from,image_url,is_new,schools(name,district,city,rating,verified))")
       .eq("user_id", user.id)
       .order("viewed_at", { ascending: false })
       .limit(40)

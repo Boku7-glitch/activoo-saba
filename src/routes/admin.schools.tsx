@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { CityDistrictPicker } from "@/components/SchoolEditor";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/ImageUploader";
 import { AddressMapPicker } from "@/components/AddressMapPicker";
+import { WorkingHoursEditor } from "@/components/WorkingHoursEditor";
+import { slugify } from "@/lib/locations";
 
 export const Route = createFileRoute("/admin/schools")({
   component: AdminSchools,
@@ -12,20 +15,33 @@ export const Route = createFileRoute("/admin/schools")({
 
 interface School {
   id: string;
+  slug: string;
   name: string;
+  name_en: string | null;
   district: string;
   description: string | null;
+  description_en: string | null;
+  about: string | null;
+  about_en: string | null;
+  city: string | null;
+  city_en: string | null;
   address: string | null;
+  address_en: string | null;
   phone: string | null;
   email: string | null;
   website: string | null;
   working_hours: string | null;
   image_url: string | null;
+  logo_url: string | null;
+  cover_image_url: string | null;
+  verified: boolean;
+  social_links: Record<string, string> | null;
   lat: number | null;
   lng: number | null;
   rating: number | null;
   review_count: number | null;
   owner_id: string | null;
+  is_visible?: boolean | null;
   created_at: string;
 }
 
@@ -35,7 +51,7 @@ function AdminSchools() {
   const [search, setSearch] = useState("");
 
   const load = async () => {
-    const { data, error } = await supabase.from("schools").select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("schools").select("*").is("deleted_at", null).order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     setRows((data as School[]) ?? []);
   };
@@ -43,10 +59,19 @@ function AdminSchools() {
   useEffect(() => { load(); }, []);
 
   const remove = async (id: string) => {
-    if (!confirm("Delete this school? All its classes will also be removed.")) return;
-    const { error } = await supabase.from("schools").delete().eq("id", id);
+    if (!confirm("Move this school and its classes to Deleted? You can restore them later.")) return;
+    const stamp = new Date().toISOString();
+    const { error } = await supabase.from("schools").update({ deleted_at: stamp }).eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("School deleted");
+    await supabase.from("classes").update({ deleted_at: stamp }).eq("school_id", id).is("deleted_at", null);
+    toast.success("Moved to Deleted");
+    load();
+  };
+
+  const togglePublish = async (id: string, next: boolean) => {
+    const { error } = await supabase.from("schools").update({ is_visible: next }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(next ? "Published on the site" : "Hidden from the site");
     load();
   };
 
@@ -105,6 +130,8 @@ function AdminSchools() {
                   <td className="px-4 py-3 text-muted-foreground">{s.phone || "—"}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{s.lat != null && s.lng != null ? "📍 Pinned" : "—"}</td>
                   <td className="px-4 py-3 text-right">
+                    <a href={`/schools/${s.slug}?preview=1`} target="_blank" rel="noreferrer" title="Preview page" className="mr-1 inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-surface-soft"><ExternalLink className="h-4 w-4" /></a>
+                    <button onClick={() => togglePublish(s.id, s.is_visible === false)} title={s.is_visible === false ? "Publish" : "Hide"} className={`mr-1 inline-flex h-8 w-8 items-center justify-center rounded-lg ${s.is_visible === false ? "text-muted-foreground hover:bg-surface-soft" : "bg-emerald-100 text-emerald-700"}`}>{s.is_visible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
                     <button onClick={() => setEditing(s)} className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-primary/20"><Pencil className="h-4 w-4" /></button>
                     <button onClick={() => remove(s.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>
                   </td>
@@ -128,21 +155,34 @@ function SchoolModal({ school, onClose, onSaved }: { school: Partial<School>; on
   const save = async () => {
     if (!form.name || !form.district) return toast.error("Name and district are required");
     setSaving(true);
+    const generatedSlug = (form.slug || slugify(form.name_en || form.name || `school-${Date.now()}`)).toLowerCase() || `school-${Date.now()}`;
     const payload = {
+      slug: generatedSlug,
       name: form.name!,
+      name_en: form.name_en || null,
       district: form.district!,
       description: form.description || null,
+      description_en: form.description_en || null,
+      about: form.about || null,
+      about_en: form.about_en || null,
+      city: form.city || null,
+      city_en: form.city_en || null,
       address: form.address || null,
+      address_en: form.address_en || null,
       phone: form.phone || null,
       email: form.email || null,
       website: form.website || null,
       working_hours: form.working_hours || null,
       image_url: form.image_url || null,
+      logo_url: form.logo_url || null,
+      cover_image_url: form.cover_image_url || null,
+      verified: !!form.verified,
+      social_links: (form.social_links ?? {}) as Record<string, string>,
       lat: form.lat ?? null,
       lng: form.lng ?? null,
     };
     const { error } = isNew
-      ? await supabase.from("schools").insert(payload)
+      ? await supabase.from("schools").insert({ ...payload, is_visible: false } as never)
       : await supabase.from("schools").update(payload).eq("id", school.id!);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -159,22 +199,44 @@ function SchoolModal({ school, onClose, onSaved }: { school: Partial<School>; on
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field label="Name *" value={form.name || ""} onChange={(v) => setForm({ ...form, name: v })} />
-          <Field label="District *" value={form.district || ""} onChange={(v) => setForm({ ...form, district: v })} />
+          <Field label="Name (KA) *" value={form.name || ""} onChange={(v) => setForm({ ...form, name: v })} />
+          <Field label="Name (EN)" value={form.name_en || ""} onChange={(v) => setForm({ ...form, name_en: v })} />
+          <CityDistrictPicker
+            city={form.city || ""}
+            district={form.district || ""}
+            onChange={(v) => setForm({ ...form, city: v.city, city_en: v.city_en, district: v.district })}
+          />
           <Field label="Phone" value={form.phone || ""} onChange={(v) => setForm({ ...form, phone: v })} />
           <Field label="Email" value={form.email || ""} onChange={(v) => setForm({ ...form, email: v })} />
           <Field label="Website" value={form.website || ""} onChange={(v) => setForm({ ...form, website: v })} />
-          <Field label="Working hours" value={form.working_hours || ""} onChange={(v) => setForm({ ...form, working_hours: v })} />
           <div className="md:col-span-2">
-            <Field label="Description" value={form.description || ""} onChange={(v) => setForm({ ...form, description: v })} multiline />
+            <WorkingHoursEditor value={form.working_hours} onChange={(v: string) => setForm({ ...form, working_hours: v })} />
+          </div>
+          <Field label="Instagram URL" value={(form.social_links?.instagram) || ""} onChange={(v) => setForm({ ...form, social_links: { ...(form.social_links ?? {}), instagram: v } })} />
+          <Field label="WhatsApp (number or link)" value={(form.social_links?.whatsapp) || ""} onChange={(v) => setForm({ ...form, social_links: { ...(form.social_links ?? {}), whatsapp: v } })} />
+          <Field label="Facebook URL" value={(form.social_links?.facebook) || ""} onChange={(v) => setForm({ ...form, social_links: { ...(form.social_links ?? {}), facebook: v } })} />
+          <Field label="TikTok URL" value={(form.social_links?.tiktok) || ""} onChange={(v) => setForm({ ...form, social_links: { ...(form.social_links ?? {}), tiktok: v } })} />
+          <label className="flex items-center gap-2 md:col-span-2">
+            <input type="checkbox" checked={!!form.verified} onChange={(e) => setForm({ ...form, verified: e.target.checked })} />
+            <span className="text-sm font-semibold">Verified school (badge shown on profile)</span>
+          </label>
+          <div className="md:col-span-2">
+            <Field label="Short description (KA)" value={form.description || ""} onChange={(v) => setForm({ ...form, description: v })} multiline />
           </div>
           <div className="md:col-span-2">
-            <ImageUploader
-              label="Cover image / logo"
-              folder="schools"
-              value={form.image_url || null}
-              onChange={(url) => setForm({ ...form, image_url: url })}
-            />
+            <Field label="Short description (EN)" value={form.description_en || ""} onChange={(v) => setForm({ ...form, description_en: v })} multiline />
+          </div>
+          <div className="md:col-span-2">
+            <Field label="About the school (KA)" value={form.about || ""} onChange={(v) => setForm({ ...form, about: v })} multiline />
+          </div>
+          <div className="md:col-span-2">
+            <Field label="About the school (EN)" value={form.about_en || ""} onChange={(v) => setForm({ ...form, about_en: v })} multiline />
+          </div>
+          <div>
+            <ImageUploader label="Logo" folder="schools" value={form.logo_url || form.image_url || null} onChange={(url) => setForm({ ...form, logo_url: url })} />
+          </div>
+          <div>
+            <ImageUploader label="Cover image" folder="schools" value={form.cover_image_url || null} onChange={(url) => setForm({ ...form, cover_image_url: url })} />
           </div>
           <div className="md:col-span-2">
             <span className="mb-1 block text-xs font-semibold">Address & location on map</span>

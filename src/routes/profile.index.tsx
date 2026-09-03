@@ -1,19 +1,24 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Heart, Clock, LogOut, Settings } from "lucide-react";
+import { Heart, Clock, LogOut, Bell } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/profile/")({
   component: ProfilePage,
+  head: () => ({
+    meta: [{ title: "My Profile — activoo" }],
+  }),
 });
 
 function ProfilePage() {
   const { user, loading, signOut } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
-  const [counts, setCounts] = useState({ saved: 0, viewed: 0 });
+  const [counts, setCounts] = useState({ saved: 0, viewed: 0, replies: 0 });
 
   useEffect(() => {
     if (loading) return;
@@ -23,7 +28,8 @@ function ProfilePage() {
     Promise.all([
       supabase.from("saved_classes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
       supabase.from("viewed_classes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-    ]).then(([s, v]) => setCounts({ saved: s.count ?? 0, viewed: v.count ?? 0 }));
+      supabase.from("leads").select("id", { count: "exact", head: true }).eq("parent_user_id", user.id).eq("status", "contacted"),
+    ]).then(([s, v, r]) => setCounts({ saved: s.count ?? 0, viewed: v.count ?? 0, replies: r.count ?? 0 }));
   }, [user, loading, navigate]);
 
   if (!user) return null;
@@ -36,22 +42,22 @@ function ProfilePage() {
             {(profile?.full_name?.[0] ?? user.email?.[0] ?? "?").toUpperCase()}
           </div>
           <div>
-            <h1 className="text-xl font-extrabold">{profile?.full_name || "Welcome"}</h1>
+            <h1 className="text-xl font-extrabold">{profile?.full_name || t("profile.welcome")}</h1>
             <p className="text-sm text-foreground/70">{user.email}</p>
           </div>
         </div>
       </div>
 
       <div className="space-y-3 px-4 pt-5">
-        <ProfileLink to="/profile/saved" icon={<Heart className="h-5 w-5" />} label="Saved classes" badge={counts.saved} />
-        <ProfileLink to="/profile/history" icon={<Clock className="h-5 w-5" />} label="Viewed history" badge={counts.viewed} />
-        <ProfileLink to="/school/onboarding" icon={<Settings className="h-5 w-5" />} label="Become a partner school" />
+        <ProfileLink to="/profile/saved" icon={<Heart className="h-5 w-5" />} label={t("profile.savedClasses")} badge={counts.saved} />
+        <ProfileLink to="/profile/history" icon={<Clock className="h-5 w-5" />} label={t("profile.viewedHistory")} badge={counts.viewed} />
+        <ProfileLink to="/profile/notifications" icon={<Bell className="h-5 w-5" />} label={t("profile.notifications")} badge={counts.replies} />
 
         <button
           onClick={() => signOut().then(() => navigate({ to: "/" }))}
           className="flex w-full items-center gap-3 rounded-2xl bg-surface-soft p-4 text-left text-sm font-semibold text-destructive shadow-soft"
         >
-          <LogOut className="h-5 w-5" /> Sign out
+          <LogOut className="h-5 w-5" /> {t("common.signOut")}
         </button>
       </div>
     </AppShell>
