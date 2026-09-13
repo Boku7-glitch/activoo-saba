@@ -63,8 +63,10 @@ function AuthPage() {
     navigate({ to: fallback });
   };
 
-  const redirectTo = () =>
-    nextPath ? `${window.location.origin}${nextPath}` : `${window.location.origin}/`;
+  const redirectTo = (targetRole?: Role) => {
+    const fallbackPath = (targetRole ?? role) === "school" ? "/school/onboarding" : "/";
+    return nextPath ? `${window.location.origin}${nextPath}` : `${window.location.origin}${fallbackPath}`;
+  };
 
   const resend = async () => {
     if (!pendingEmail) return;
@@ -112,7 +114,10 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
-          options: { emailRedirectTo: redirectTo(), data: { full_name: parsed.data.full_name } },
+          options: {
+            emailRedirectTo: redirectTo(role),
+            data: { full_name: parsed.data.full_name, role },
+          },
         });
         if (error) { toast.error(error.message); return; }
         if (data.session && data.user) {

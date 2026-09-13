@@ -24,16 +24,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadRole = async (uid: string | undefined) => {
+  const loadRole = async (uid: string | undefined, currentUser?: User | null) => {
     if (!uid) { setRole(null); setRoles([]); return; }
     const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
     let list = (data ?? []).map((r) => r.role as AppRole);
     // Apply role chosen at sign-up once the email is confirmed and a session exists
-    if (list.length === 0 && typeof window !== "undefined") {
-      const pending = window.localStorage.getItem("activoo_pending_role");
+    if (list.length === 0) {
+      let pending: AppRole | null = null;
+      if (typeof window !== "undefined") {
+        pending = window.localStorage.getItem("activoo_pending_role") as AppRole | null;
+      }
+      if (!pending) {
+        const u = currentUser ?? (await supabase.auth.getUser()).data.user;
+        const metaRole = u?.user_metadata?.role as AppRole | undefined;
+        if (metaRole === "parent" || metaRole === "school") {
+          pending = metaRole;
+        }
+      }
       if (pending === "parent" || pending === "school") {
         const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: pending });
-        window.localStorage.removeItem("activoo_pending_role");
+        if (typeof window !== "undefined") window.localStorage.removeItem("activoo_pending_role");
         if (!error) list = [pending];
       }
     }
@@ -79,13 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       // defer supabase calls to avoid deadlock
-      setTimeout(() => { loadRole(newSession?.user?.id); }, 0);
+      setTimeout(() => { loadRole(newSession?.user?.id, newSession?.user); }, 0);
     });
     // 2. Then read existing session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
-      loadRole(s?.user?.id).finally(() => setLoading(false));
+      loadRole(s?.user?.id, s?.user).finally(() => setLoading(false));
     });
     return () => { sub.subscription.unsubscribe(); };
   }, []);
