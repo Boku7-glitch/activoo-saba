@@ -47,6 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!error) list = [pending];
       }
     }
+    // Safety check: if user already owns a school in the database, ensure 'school' role is included
+    if (!list.includes("school") && !list.includes("admin")) {
+      const { data: ownSchool } = await supabase.from("schools").select("id").eq("owner_id", uid).limit(1).maybeSingle();
+      if (ownSchool) {
+        list.push("school");
+        await supabase.from("user_roles").insert({ user_id: uid, role: "school" });
+      }
+    }
     setRoles(list);
     // Prefer admin > school > parent for primary "role" used in routing
     const primary: AppRole | null = list.includes("admin")

@@ -600,10 +600,14 @@ CREATE POLICY "Nav items viewable by everyone" ON public.nav_items FOR SELECT US
 DROP POLICY IF EXISTS "Admins manage nav items" ON public.nav_items;
 CREATE POLICY "Admins manage nav items" ON public.nav_items FOR ALL USING (public.is_admin());
 
--- 14. AUTH USER PROFILE TRIGGER
+-- 14. AUTH USER PROFILE & ROLE TRIGGER
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_role public.app_role;
+  raw_role text;
 BEGIN
+  -- 1. Create or update profile
   INSERT INTO public.profiles (id, full_name, avatar_url)
   VALUES (
     new.id,
@@ -611,6 +615,19 @@ BEGIN
     COALESCE(new.raw_user_meta_data->>'avatar_url', '')
   )
   ON CONFLICT (id) DO NOTHING;
+
+  -- 2. Automatically assign the role selected during registration
+  raw_role := new.raw_user_meta_data->>'role';
+  IF raw_role = 'school' THEN
+    v_role := 'school'::public.app_role;
+  ELSE
+    v_role := 'parent'::public.app_role;
+  END IF;
+
+  INSERT INTO public.user_roles (user_id, role)
+  VALUES (new.id, v_role)
+  ON CONFLICT (user_id, role) DO NOTHING;
+
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

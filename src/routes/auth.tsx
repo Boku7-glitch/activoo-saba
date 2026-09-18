@@ -22,8 +22,11 @@ const signInSchema = z.object({
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
-  validateSearch: (s: Record<string, unknown>): { next?: string } =>
-    typeof s.next === "string" ? { next: s.next } : {},
+  validateSearch: (s: Record<string, unknown>): { next?: string; role?: "parent" | "school"; mode?: "signin" | "signup" | "reset" } => ({
+    next: typeof s.next === "string" ? s.next : undefined,
+    role: s.role === "school" || s.role === "parent" ? s.role : undefined,
+    mode: s.mode === "signup" || s.mode === "signin" || s.mode === "reset" ? s.mode : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — activoo" },
@@ -46,10 +49,10 @@ function AuthPage() {
   const navigate = useNavigate();
   const { refreshRole } = useAuth();
   const { lang, t } = useI18n();
-  const { next } = Route.useSearch();
-  const nextPath = safeNext(next);
-  const [mode, setMode] = useState<Mode>("signin");
-  const [role, setRole] = useState<Role>("parent");
+  const search = Route.useSearch();
+  const nextPath = safeNext(search.next);
+  const [mode, setMode] = useState<Mode>(search.mode || "signin");
+  const [role, setRole] = useState<Role>(search.role || "parent");
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -120,6 +123,12 @@ function AuthPage() {
           },
         });
         if (error) { toast.error(error.message); return; }
+        // If user already exists and is confirmed, Supabase returns identities: []
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          toast.info("This email is already registered and confirmed! Please sign in with your password.");
+          setMode("signin");
+          return;
+        }
         if (data.session && data.user) {
           await supabase.from("user_roles").insert({ user_id: data.user.id, role });
           window.localStorage.removeItem("activoo_pending_role");
@@ -149,10 +158,27 @@ function AuthPage() {
           }
           return;
         }
+        let { data: roleRow } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id).maybeSingle();
+        if (!roleRow) {
+          const pending = (typeof window !== "undefined" ? window.localStorage.getItem("activoo_pending_role") : null) || (data.user.user_metadata?.role as Role | undefined);
+          if (pending === "school" || pending === "parent") {
+            await supabase.from("user_roles").insert({ user_id: data.user.id, role: pending });
+            if (typeof window !== "undefined") window.localStorage.removeItem("activoo_pending_role");
+            roleRow = { role: pending as any };
+          }
+        }
         await refreshRole();
-        const { data: roleRow } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id).maybeSingle();
         toast.success("Welcome back!");
-        goNext(roleRow?.role === "school" ? "/school/dashboard" : "/");
+        if (roleRow?.role === "school") {
+          const { data: ownSchools } = await supabase.from("schools").select("id").eq("owner_id", data.user.id).is("deleted_at", null).limit(1);
+          if (ownSchools && ownSchools.length > 0) {
+            goNext("/school/dashboard");
+          } else {
+            goNext("/school/onboarding");
+          }
+        } else {
+          goNext("/");
+        }
       }
     } finally { setLoading(false); }
   };

@@ -401,10 +401,12 @@ function HomePage() {
           <p className="mt-1 text-sm text-background/70 md:text-base">{schoolsSubtitle}</p>
         </div>
         <Link
-          to="/school/onboarding"
+          to={role === "school" ? "/school/dashboard" : "/school/onboarding"}
           className="mt-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-accent-strong px-5 py-2.5 text-sm font-bold text-foreground transition hover:opacity-90 md:mt-0 md:px-7 md:py-3.5 md:text-base"
         >
-          {t("home.becomePartner")}
+          {role === "school"
+            ? (lang === "en" ? "Go to School Dashboard →" : "სკოლის კაბინეტში გადასვლა →")
+            : t("home.becomePartner")}
         </Link>
       </section>
     </AppShell>

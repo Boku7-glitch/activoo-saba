@@ -42,6 +42,17 @@ export function AppShell({ children, hideTabBar, hideHeader, hideViewTabs }: Pro
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
 
+              {/* Mobile School Quick Access */}
+              {role === "school" && (
+                <Link
+                  to="/school/dashboard"
+                  aria-label="School Dashboard"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-strong text-foreground transition hover:opacity-90"
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                </Link>
+              )}
+
               {/* Mobile Admin Quick Access Link */}
               {isAdmin && (
                 <Link
@@ -59,7 +70,7 @@ export function AppShell({ children, hideTabBar, hideHeader, hideViewTabs }: Pro
                 onClick={() => navigate({ to: accountTo })}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-soft text-foreground transition hover:bg-primary/30"
               >
-                {user ? <User className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
+                {user ? (role === "school" ? <LayoutDashboard className="h-5 w-5" /> : <User className="h-5 w-5" />) : <LogIn className="h-5 w-5" />}
               </button>
             </div>
           </div>
@@ -95,6 +106,16 @@ export function AppShell({ children, hideTabBar, hideHeader, hideViewTabs }: Pro
           <div className="flex items-center gap-2">
             <LanguageSwitcher variant="pill" />
 
+            {/* Desktop School Dashboard Link */}
+            {role === "school" && (
+              <Link
+                to="/school/dashboard"
+                className="inline-flex items-center gap-2 rounded-full bg-accent-strong px-4 py-2 text-sm font-bold text-foreground transition hover:opacity-90"
+              >
+                <LayoutDashboard className="h-4 w-4" /> {t("common.dashboard") || "Dashboard"}
+              </Link>
+            )}
+
             {/* Desktop Admin Link */}
             {isAdmin && (
               <Link
@@ -110,7 +131,8 @@ export function AppShell({ children, hideTabBar, hideHeader, hideViewTabs }: Pro
                 to={accountTo}
                 className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background transition hover:opacity-90"
               >
-                <User className="h-4 w-4" /> {t("common.account")}
+                {role === "school" ? <LayoutDashboard className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                {role === "school" ? (t("common.dashboard") || "Dashboard") : t("common.account")}
               </Link>
             ) : (
               <Link
@@ -167,6 +189,7 @@ export function AppShell({ children, hideTabBar, hideHeader, hideViewTabs }: Pro
 function DesktopFooter() {
   const footerItems = useNavItems("footer");
   const t = useT();
+  const { role } = useAuth();
   return (
     <footer className="hidden border-t border-border/60 bg-surface-soft md:block">
       <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-8 py-8 md:flex-row md:items-center">
@@ -180,7 +203,9 @@ function DesktopFooter() {
               <Link to="/" className="hover:text-foreground">{t("common.home")}</Link>
               <Link to="/search" className="hover:text-foreground">{t("common.search")}</Link>
               <Link to="/match" className="hover:text-foreground">{t("common.smartMatch")}</Link>
-              <Link to="/school/onboarding" className="hover:text-foreground">{t("common.forSchools")}</Link>
+              <Link to={role === "school" ? "/school/dashboard" : "/school/onboarding"} className="hover:text-foreground">
+                {role === "school" ? (t("common.dashboard") || "Dashboard") : t("common.forSchools")}
+              </Link>
             </>
           ) : (
             footerItems.map((item) => <FooterLink key={item.id} labelKa={item.label_ka} labelEn={item.label_en} href={item.href} />)
@@ -196,11 +221,15 @@ function DesktopFooter() {
 
 function MobileFooter() {
   const t = useT();
+  const { role } = useAuth();
   return (
     <footer className="border-t border-border/60 bg-surface-soft px-4 py-6 pb-28 md:hidden">
       <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
         <Link to="/" className="hover:text-foreground">{t("common.home")}</Link>
         <Link to="/search" className="hover:text-foreground">{t("common.search")}</Link>
+        <Link to={role === "school" ? "/school/dashboard" : "/school/onboarding"} className="hover:text-foreground">
+          {role === "school" ? (t("common.dashboard") || "Dashboard") : t("common.forSchools")}
+        </Link>
         <Link to="/terms" className="hover:text-foreground">{t("common.terms")}</Link>
         <Link to="/privacy" className="hover:text-foreground">{t("common.privacy")}</Link>
         <Link to="/admin" className="hover:text-foreground">Admin</Link>
