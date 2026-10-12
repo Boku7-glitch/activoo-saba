@@ -6,7 +6,7 @@ import { ClassCard, type ClassRow } from "@/components/ClassCard";
 import { ClassCardSkeleton } from "@/components/Skeletons";
 import { SearchMap } from "@/components/SearchMap";
 import { useFilterRanges } from "@/lib/filter-ranges";
-import { useView, useViewCategories, useViewFilters } from "@/lib/view-context";
+import { useView, useViewCategories, useViewFilters, isUUID } from "@/lib/view-context";
 import { useLocations } from "@/lib/locations";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -153,7 +153,7 @@ function SearchPage() {
 
   // Load districts available for current view
   useEffect(() => {
-    if (!activeView?.id) return;
+    if (!activeView?.id || !isUUID(activeView.id)) return;
     supabase
       .from("classes")
       .select("schools(district,city)")
@@ -185,7 +185,7 @@ function SearchPage() {
       .limit(isTextSearch ? 200 : 40);
 
     // When the user types a query we search across ALL views and group results.
-    if (!isTextSearch && activeView?.id) q = q.eq("view_id", activeView.id);
+    if (!isTextSearch && activeView?.id && isUUID(activeView.id)) q = q.eq("view_id", activeView.id);
     if (isTextSearch) {
       const term = search.q!.trim();
       q = q.or(`title.ilike.%${term}%,title_en.ilike.%${term}%`);
@@ -210,7 +210,10 @@ function SearchPage() {
         }
       });
       if (subIdSet.size > 0) {
-        q = q.overlaps("subcategory_ids", [...subIdSet]);
+        const validSubs = [...subIdSet].filter(isUUID);
+        if (validSubs.length > 0) {
+          q = q.overlaps("subcategory_ids", validSubs);
+        }
       }
 
       if (ageBucket) q = q.lte("age_min", ageBucket.max).gte("age_max", ageBucket.min);
@@ -233,7 +236,7 @@ function SearchPage() {
               price_from: 80,
               image_url: null,
               is_new: true,
-              view_id: "v-education",
+              view_id: "9355e7e7-c8da-492b-be18-07a24467fe5e",
               schools: { name: "CodeKids Tbilisi", name_en: "CodeKids Tbilisi", district: "Saburtalo", district_en: "Saburtalo", city: "Tbilisi", city_en: "Tbilisi", rating: 4.9, verified: true },
             },
             {
@@ -246,7 +249,7 @@ function SearchPage() {
               price_from: 120,
               image_url: null,
               is_new: true,
-              view_id: "v-education",
+              view_id: "9355e7e7-c8da-492b-be18-07a24467fe5e",
               schools: { name: "IT Academy Junior", name_en: "IT Academy Junior", district: "Vake", district_en: "Vake", city: "Tbilisi", city_en: "Tbilisi", rating: 4.8, verified: true },
             },
             {
@@ -259,7 +262,7 @@ function SearchPage() {
               price_from: 80,
               image_url: null,
               is_new: false,
-              view_id: "v-education",
+              view_id: "9355e7e7-c8da-492b-be18-07a24467fe5e",
               schools: { name: "Art Studio Color", name_en: "Art Studio Color", district: "Vera", district_en: "Vera", city: "Tbilisi", city_en: "Tbilisi", rating: 4.9, verified: true },
             },
             {
@@ -272,7 +275,7 @@ function SearchPage() {
               price_from: 90,
               image_url: null,
               is_new: false,
-              view_id: "v-activity",
+              view_id: "e3c1e208-7107-4498-85da-669af5068d96",
               schools: { name: "Champions League Club", name_en: "Champions League Club", district: "Didi Dighomi", district_en: "Didi Dighomi", city: "Tbilisi", city_en: "Tbilisi", rating: 4.7, verified: true },
             },
             {
@@ -285,7 +288,7 @@ function SearchPage() {
               price_from: 70,
               image_url: null,
               is_new: true,
-              view_id: "v-education",
+              view_id: "9355e7e7-c8da-492b-be18-07a24467fe5e",
               schools: { name: "Grandmaster Academy", name_en: "Grandmaster Academy", district: "Old Tbilisi", district_en: "Old Tbilisi", city: "Tbilisi", city_en: "Tbilisi", rating: 5.0, verified: true },
             },
           ] as unknown) as SearchClassRow[];

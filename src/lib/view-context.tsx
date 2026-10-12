@@ -58,19 +58,24 @@ const Ctx = createContext<ViewContextValue | null>(null);
 
 const STORAGE_KEY = "activoo:view";
 
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function isUUID(val: unknown): val is string {
+  return typeof val === "string" && UUID_REGEX.test(val);
+}
+
 const DEFAULT_VIEWS: ViewRow[] = [
-  { id: "v-education", slug: "education", name: "განათლება", name_en: "Education", icon: "GraduationCap", accent_hex: "#6366F1", accent_secondary_hex: "#818CF8", sort_order: 1, is_active: true },
-  { id: "v-activity", slug: "activity", name: "აქტივობა", name_en: "Activity", icon: "Activity", accent_hex: "#EC4899", accent_secondary_hex: "#F472B6", sort_order: 2, is_active: true },
-  { id: "v-masterclasses", slug: "masterclasses", name: "მასტერკლასები", name_en: "Masterclasses", icon: "Sparkles", accent_hex: "#F59E0B", accent_secondary_hex: "#FBBF24", sort_order: 3, is_active: true },
-  { id: "v-services", slug: "services", name: "სერვისები", name_en: "Services", icon: "Briefcase", accent_hex: "#10B981", accent_secondary_hex: "#34D399", sort_order: 4, is_active: true },
+  { id: "9355e7e7-c8da-492b-be18-07a24467fe5e", slug: "education", name: "განათლება", name_en: "Education", icon: "GraduationCap", accent_hex: "#7c3aed", accent_secondary_hex: "#a855f7", sort_order: 10, is_active: true },
+  { id: "e3c1e208-7107-4498-85da-669af5068d96", slug: "activity", name: "აქტივობა", name_en: "Activity", icon: "Activity", accent_hex: "#059669", accent_secondary_hex: "#10b981", sort_order: 20, is_active: true },
+  { id: "11111111-1111-1111-1111-000000000003", slug: "masterclasses", name: "მასტერკლასები", name_en: "Masterclasses", icon: "Sparkles", accent_hex: "#d97706", accent_secondary_hex: "#f59e0b", sort_order: 30, is_active: true },
+  { id: "ec17ed2a-0135-4eeb-b8d2-60196fae8502", slug: "services", name: "სერვისები", name_en: "Services", icon: "Briefcase", accent_hex: "#2563eb", accent_secondary_hex: "#3b82f6", sort_order: 40, is_active: true },
 ];
 
 const DEFAULT_CATEGORIES: CategoryRow[] = [
-  { id: "c-art", view_id: "v-education", slug: "creativity", name: "შემოქმედება", name_en: "Art & Creativity", icon: "🎨", sort_order: 1 },
-  { id: "c-it", view_id: "v-education", slug: "it", name: "IT და კოდინგი", name_en: "IT & Coding", icon: "💻", sort_order: 2 },
-  { id: "c-sports", view_id: "v-activity", slug: "sports", name: "სპორტი", name_en: "Sports", icon: "⚽", sort_order: 3 },
-  { id: "c-dev", view_id: "v-education", slug: "development", name: "განვითარება", name_en: "Early Development", icon: "🧠", sort_order: 4 },
-  { id: "c-lang", view_id: "v-education", slug: "languages", name: "ენები", name_en: "Languages", icon: "🌍", sort_order: 5 },
+  { id: "703ee081-dbd7-48c7-8964-bafccb6c3e18", view_id: "9355e7e7-c8da-492b-be18-07a24467fe5e", slug: "creativity", name: "შემოქმედება", name_en: "Art & Creativity", icon: "🎨", sort_order: 1 },
+  { id: "22222222-2222-2222-2222-000000000002", view_id: "9355e7e7-c8da-492b-be18-07a24467fe5e", slug: "it", name: "IT და კოდინგი", name_en: "IT & Coding", icon: "💻", sort_order: 2 },
+  { id: "22222222-2222-2222-2222-000000000003", view_id: "e3c1e208-7107-4498-85da-669af5068d96", slug: "sports", name: "სპორტი", name_en: "Sports", icon: "⚽", sort_order: 3 },
+  { id: "22222222-2222-2222-2222-000000000004", view_id: "9355e7e7-c8da-492b-be18-07a24467fe5e", slug: "development", name: "განვითარება", name_en: "Early Development", icon: "🧠", sort_order: 4 },
+  { id: "22222222-2222-2222-2222-000000000005", view_id: "9355e7e7-c8da-492b-be18-07a24467fe5e", slug: "languages", name: "ენები", name_en: "Languages", icon: "🌍", sort_order: 5 },
 ];
 
 export function ViewProvider({ children }: { children: ReactNode }) {

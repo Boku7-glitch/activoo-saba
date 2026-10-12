@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { AppShell } from "@/components/AppShell";
@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
 
 const signUpSchema = z.object({
   full_name: z.string().trim().min(1, "Name required").max(100),
@@ -46,6 +47,11 @@ type Mode = "signin" | "signup" | "reset";
 type Role = "parent" | "school";
 
 function AuthPage() {
+  const routerState = useRouterState();
+  if (routerState.location.pathname.startsWith("/auth/reset")) {
+    return <Outlet />;
+  }
+
   const navigate = useNavigate();
   const { refreshRole } = useAuth();
   const { lang, t } = useI18n();
@@ -393,17 +399,37 @@ function Input({
 }: {
   label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; error?: string; autoComplete?: string;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const actualType = isPassword ? (showPassword ? "text" : "password") : type;
+
   return (
     <label className="block">
       <span className="mb-1.5 block text-xs font-semibold">{label}</span>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        className="h-12 w-full rounded-2xl border border-border bg-surface px-4 text-sm outline-none focus:border-primary"
-      />
+      <div className="relative">
+        <input
+          type={actualType}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          className={cn(
+            "h-12 w-full rounded-2xl border border-border bg-surface px-4 text-sm outline-none focus:border-primary",
+            isPassword && "pr-11"
+          )}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-foreground/50 hover:text-foreground transition focus:outline-none"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
       {error && <span className="mt-1 block text-xs text-destructive">{error}</span>}
     </label>
   );

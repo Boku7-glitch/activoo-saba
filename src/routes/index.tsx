@@ -8,7 +8,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { Logo } from "@/components/Logo";
 import { CmsIcon } from "@/components/CmsIcon";
 import heroIllustration from "@/assets/hero-illustration.png";
-import { useView, useViewCategories } from "@/lib/view-context";
+import { useView, useViewCategories, isUUID } from "@/lib/view-context";
 import { ViewTabs } from "@/components/ViewTabs";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useAuth } from "@/lib/auth-context";
@@ -169,7 +169,7 @@ function HomePage() {
     const select = "id,title,title_en,category,age_min,age_max,price_from,image_url,is_new,schools(name,name_en,district,district_en,city,city_en,rating,verified)";
     const base = (viewId?: string | null) => {
       let q = supabase.from("classes").select(select).eq("is_visible", true).eq("approval_status", "approved").is("deleted_at", null);
-      if (viewId) q = q.eq("view_id", viewId);
+      if (viewId && isUUID(viewId)) q = q.eq("view_id", viewId);
       return q;
     };
     const load = (viewId?: string | null) =>
@@ -182,10 +182,11 @@ function HomePage() {
 
     (async () => {
       try {
-        let [f, n, near, mv] = await load(activeView?.id);
+        const targetViewId = activeView?.id && isUUID(activeView.id) ? activeView.id : null;
+        let [f, n, near, mv] = await load(targetViewId);
         // Fallback: if this view has no published classes yet, show classes from all views
         const empty = [f, n, near, mv].every((r) => ((r.data as unknown[] | null) ?? []).length === 0);
-        if (empty && activeView?.id) {
+        if (empty && targetViewId) {
           [f, n, near, mv] = await load(null);
         }
         if (cancelled) return;

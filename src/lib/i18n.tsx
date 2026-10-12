@@ -344,7 +344,14 @@ export function useNavItems(location: NavItem["location"]): NavItem[] {
       .eq("location", location)
       .eq("is_visible", true)
       .order("sort_order", { ascending: true })
-      .then(({ data }) => setItems((data as NavItem[] | null) ?? []));
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setItems(data as NavItem[]);
+        } else {
+          setItems([]);
+        }
+      })
+      .catch(() => setItems([]));
   }, [location]);
   return items;
 }

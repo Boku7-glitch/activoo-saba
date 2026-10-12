@@ -583,22 +583,26 @@ CREATE POLICY "Admins manage site settings" ON public.site_settings FOR ALL USIN
 
 CREATE TABLE IF NOT EXISTS public.nav_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  section TEXT NOT NULL DEFAULT 'header',
+  location TEXT NOT NULL CHECK (location IN ('header', 'footer', 'social')),
+  group_ka TEXT,
+  group_en TEXT,
   label_ka TEXT NOT NULL,
   label_en TEXT,
   href TEXT NOT NULL,
   icon TEXT,
   sort_order INT NOT NULL DEFAULT 0,
-  is_active BOOLEAN NOT NULL DEFAULT true,
+  is_visible BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.nav_items ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Nav items viewable by everyone" ON public.nav_items;
-CREATE POLICY "Nav items viewable by everyone" ON public.nav_items FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Anyone can read visible nav items" ON public.nav_items;
+CREATE POLICY "Nav items viewable by everyone" ON public.nav_items FOR SELECT USING (is_visible = true OR public.is_admin());
 DROP POLICY IF EXISTS "Admins manage nav items" ON public.nav_items;
 CREATE POLICY "Admins manage nav items" ON public.nav_items FOR ALL USING (public.is_admin());
+CREATE INDEX IF NOT EXISTS idx_nav_items_location_sort ON public.nav_items(location, sort_order);
 
 -- 14. AUTH USER PROFILE & ROLE TRIGGER
 CREATE OR REPLACE FUNCTION public.handle_new_user()
